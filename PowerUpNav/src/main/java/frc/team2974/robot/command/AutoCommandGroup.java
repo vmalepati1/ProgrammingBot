@@ -68,6 +68,9 @@ public class AutoCommandGroup extends CommandGroup {
             case 4:
                 addSequential(new AutoDriveToTarget(this));
                 break;
+            case 5:
+                addSequential(new PathfinderSplineTest());
+                break;
         }
 
         // these will run in order.

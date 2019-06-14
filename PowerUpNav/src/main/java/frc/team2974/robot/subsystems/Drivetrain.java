@@ -7,6 +7,8 @@ import frc.team2974.robot.Config.MotionConstants;
 import frc.team2974.robot.Config.Path;
 import frc.team2974.robot.Robot;
 import frc.team2974.robot.command.teleop.DriveCommand;
+import jaci.pathfinder.followers.EncoderFollower;
+
 import org.waltonrobotics.AbstractDrivetrain;
 import org.waltonrobotics.MotionLogger;
 import org.waltonrobotics.controller.RobotPair;

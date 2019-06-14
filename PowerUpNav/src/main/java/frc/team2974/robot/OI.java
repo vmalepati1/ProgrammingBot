@@ -11,7 +11,7 @@ import static frc.team2974.robot.Config.Input.GAMEPAD_PORT;
  * that allow control of the robot.
  */
 public final class OI {
-
+    
     public static final Gamepad gamepad;
 
     static {

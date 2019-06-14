@@ -1,5 +1,7 @@
 package frc.team2974.robot;
 
+import edu.wpi.first.wpilibj.Notifier;
+
 //import static frc.team2974.robot.RobotMap.pneumaticsShifter;
 
 import edu.wpi.first.wpilibj.TimedRobot;
@@ -9,6 +11,8 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.team2974.robot.command.AutoCommandGroup;
 import frc.team2974.robot.subsystems.Drivetrain;
+import jaci.pathfinder.followers.EncoderFollower;
+
 import org.waltonrobotics.MotionLogger;
 
 /**
@@ -46,6 +50,7 @@ public class Robot extends TimedRobot {
         autoMode.addOption("Automode 2", new AutoCommandGroup(2));
         autoMode.addOption("Spline 1", new AutoCommandGroup(3));
         autoMode.addOption("Spline 2", new AutoCommandGroup(4));
+        autoMode.addOption("Pathfinder Spline Test", new AutoCommandGroup(5));
         SmartDashboard.putData("AutoCommandGroup", autoMode);
         drivetrain.shiftDown();
         System.out.println("Robot initializing...");

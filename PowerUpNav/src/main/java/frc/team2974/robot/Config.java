@@ -100,4 +100,13 @@ public final class Config {
         private MotionConstants() {
         }
     }
+
+    public static final class PathfinderConstants {
+        public static final int K_TICKS_PER_REVOLUTION = 1024;
+        public static final double K_WHEEL_DIAMETER = 4.0 / 12.0;
+        public static final double K_MAX_VELOCITY = 10;
+
+        private PathfinderConstants() {
+        }
+    }
 }
