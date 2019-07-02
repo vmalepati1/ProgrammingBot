@@ -1,9 +1,0 @@
-[
-  {
-    "artifact": "frcJava (in project PowerUpNav)",
-    "target": "roborio",
-    "debugfile": "frcJava_roborio.debugconfig",
-    "project": "PowerUpNav",
-    "language": "java"
-  }
-]
