@@ -38,8 +38,8 @@ public class PathfinderSplineTest extends Command {
         try {
             // TODO: PathWeaver supposedly swaps paths
             // TODO: May have to change the filepaths when you put the CSV files on the robot filesystem
-            leftTrajectory = PathfinderFRC.getTrajectory("test.right");
-            rightTrajectory = PathfinderFRC.getTrajectory("test.left");
+            leftTrajectory = PathfinderFRC.getTrajectory("Straight.left");
+            rightTrajectory = PathfinderFRC.getTrajectory("Straight.right");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -69,12 +69,22 @@ public class PathfinderSplineTest extends Command {
             double leftSpeed = leftFollower.calculate(encoderLeft.get());
             double rightSpeed = rightFollower.calculate(encoderRight.get());
             // TODO: Not sure if yaw needs to be negated
-            double heading = -drivetrain.getAhrs().getYaw();
+            double heading = -drivetrain.getAhrs().getFusedHeading();
             // TODO: Not sure about orientation either so desiredHeading may also need to be negated
             double desiredHeading = Pathfinder.r2d(leftFollower.getHeading());
             double headingDifference = Pathfinder.boundHalfDegrees(desiredHeading - heading);
             double turn = 0.8 * (-1.0 / 80.0) * headingDifference;
-            drivetrain.setSpeeds(leftSpeed + turn, rightSpeed - turn);
+            drivetrain.setSpeeds(leftSpeed - turn, rightSpeed + turn);
+
+            System.out.println("Heading: " + heading);
+            System.out.println("Desired heading: " + desiredHeading);
+            System.out.println("Heading difference: " + headingDifference);
+            System.out.println("Turn: " + turn);
+
+            SmartDashboard.putNumber("Heading", heading);
+            SmartDashboard.putNumber("Desired heading", desiredHeading);
+            SmartDashboard.putNumber("Heading difference", headingDifference);
+            SmartDashboard.putNumber("Turn", turn);
 
             SmartDashboard.putNumber(PATHFINDER_LEFT_MOTOR_SPEED, leftSpeed);
             SmartDashboard.putNumber(PATHFINDER_RIGHT_MOTOR_SPEED, rightSpeed);

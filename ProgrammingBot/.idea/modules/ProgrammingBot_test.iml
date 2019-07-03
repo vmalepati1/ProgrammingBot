@@ -19,7 +19,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../lib/CTRE_Phoenix-sources.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../lib/CTRE_Phoenix.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />
@@ -28,7 +28,7 @@
     <orderEntry type="module-library">
       <library>
         <CLASSES>
-          <root url="jar://$MODULE_DIR$/../../lib/CTRE_Phoenix.jar!/" />
+          <root url="jar://$MODULE_DIR$/../../lib/CTRE_Phoenix-sources.jar!/" />
         </CLASSES>
         <JAVADOC />
         <SOURCES />

@@ -3,6 +3,7 @@ package frc.team2974.robot;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
+import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
@@ -10,12 +11,25 @@ import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.team2974.robot.command.AbsolutePoseTracker;
 import frc.team2974.robot.command.auton.PathfinderSplineTest;
+import frc.team2974.robot.command.teleop.Drive;
 import frc.team2974.robot.subsystems.Drivetrain;
+import jaci.pathfinder.Pathfinder;
+import jaci.pathfinder.PathfinderFRC;
+import jaci.pathfinder.Trajectory;
+import jaci.pathfinder.followers.EncoderFollower;
 
 import javax.management.*;
+import java.io.IOException;
 import java.lang.management.ManagementFactory;
 
+import static frc.team2974.robot.Config.PathfinderConstants.K_MAX_VELOCITY;
+import static frc.team2974.robot.Config.PathfinderConstants.K_TICKS_PER_REVOLUTION;
+import static frc.team2974.robot.Config.PathfinderConstants.K_WHEEL_DIAMETER;
+import static frc.team2974.robot.Config.SmartDashboardKeys.PATHFINDER_LEFT_MOTOR_SPEED;
+import static frc.team2974.robot.Config.SmartDashboardKeys.PATHFINDER_RIGHT_MOTOR_SPEED;
 import static frc.team2974.robot.Config.SmartDashboardKeys.TESTING_AUTON_SELECT;
+import static frc.team2974.robot.RobotMap.encoderLeft;
+import static frc.team2974.robot.RobotMap.encoderRight;
 
 /**
  * The VM is configured to automatically run this class, and to call the functions corresponding to each mode, as
@@ -30,6 +44,11 @@ public class Robot extends TimedRobot {
 
     private SendableChooser<Command> autonSendableChooser;
 
+    private EncoderFollower leftFollower;
+    private EncoderFollower rightFollower;
+
+    private Notifier followerNotifier;
+
     @Override
     public void robotInit() {
         System.out.println("Initializing robot.");
@@ -38,9 +57,9 @@ public class Robot extends TimedRobot {
         oi = new OI();
         waltonDashboard = NetworkTableInstance.getDefault().getTable("WaltonDashboard");
 
-        autonSendableChooser = new SendableChooser<>();
-        autonSendableChooser.setDefaultOption("Pathfinder Spline Test", new PathfinderSplineTest());
-        SmartDashboard.putData(TESTING_AUTON_SELECT, autonSendableChooser);
+        //autonSendableChooser = new SendableChooser<>();
+        //autonSendableChooser.setDefaultOption("Pathfinder Spline Test", new PathfinderSplineTest());
+        //SmartDashboard.putData(TESTING_AUTON_SELECT, autonSendableChooser);
 
         drivetrain.reset();
         drivetrain.shiftDown();
@@ -82,7 +101,6 @@ public class Robot extends TimedRobot {
             e.printStackTrace();
         }
         waltonDashboard.getEntry("Diagnostics/RIO RAM Use").setNumber(getRIORamUse());
-
     }
 
     @Override
@@ -101,7 +119,7 @@ public class Robot extends TimedRobot {
 
         drivetrain.shiftDown();
 
-        autonSendableChooser.getSelected().start();
+        new PathfinderSplineTest().start();
     }
 
     @Override
@@ -113,14 +131,20 @@ public class Robot extends TimedRobot {
     public void teleopInit() {
         new AbsolutePoseTracker().start();
 
-        autonSendableChooser.getSelected().cancel();
+        // autonSendableChooser.getSelected().cancel();
+
+        new Drive().start();
 
         drivetrain.shiftUp();
+        drivetrain.reset();
     }
 
     @Override
     public void teleopPeriodic() {
         Scheduler.getInstance().run();
+
+        SmartDashboard.putNumber("Left enc", encoderLeft.get());
+        SmartDashboard.putNumber("Right enc", encoderRight.get());
     }
 
     @Override
