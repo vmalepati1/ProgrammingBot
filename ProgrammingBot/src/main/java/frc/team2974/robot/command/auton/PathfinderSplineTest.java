@@ -38,9 +38,8 @@ public class PathfinderSplineTest extends Command {
         try {
             // TODO: PathWeaver supposedly swaps paths
             // TODO: May have to change the filepaths when you put the CSV files on the robot filesystem
-            // TODO: PathWeaver version < 3.1 swaps the left and right paths!
-            leftTrajectory = PathfinderFRC.getTrajectory("Straight.right");
-            rightTrajectory = PathfinderFRC.getTrajectory("Straight.left");
+            leftTrajectory = PathfinderFRC.getTrajectory("straight.left");
+            rightTrajectory = PathfinderFRC.getTrajectory("straight.right");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -70,6 +69,7 @@ public class PathfinderSplineTest extends Command {
             double leftSpeed = leftFollower.calculate(encoderLeft.get());
             double rightSpeed = rightFollower.calculate(encoderRight.get());
             // TODO: Not sure if heading needs to be negated
+            // TODO: Try fusedHeading() if this doesn't work
             double heading = drivetrain.getAhrs().getAngle();
             // TODO: Not sure about orientation either so desiredHeading may also need to be negated
             double desiredHeading = Pathfinder.r2d(leftFollower.getHeading());

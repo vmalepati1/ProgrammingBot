@@ -51,8 +51,8 @@ public final class Config {
 
     public static final class PathfinderConstants {
         public static final int K_TICKS_PER_REVOLUTION = 1024;
-        public static final double K_WHEEL_DIAMETER = 4.0 / 12.0;
-        public static final double K_MAX_VELOCITY = 10;
+        public static final double K_WHEEL_DIAMETER = 0.127;
+        public static final double K_MAX_VELOCITY = 2.634;
 
         private PathfinderConstants() {
         }
@@ -60,7 +60,7 @@ public final class Config {
 
     public static final class RobotConstants {
 
-        public static final double DISTANCE_PER_PULSE = 0.000409;
+        public static final double DISTANCE_PER_PULSE = 0.00038963112; // 0.000409
         public static final double DISTANCE_BETWEEN_WHEELS = 0.78;
 
     }
