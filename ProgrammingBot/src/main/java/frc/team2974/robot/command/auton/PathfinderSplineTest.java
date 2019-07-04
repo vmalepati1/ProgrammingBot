@@ -38,8 +38,9 @@ public class PathfinderSplineTest extends Command {
         try {
             // TODO: PathWeaver supposedly swaps paths
             // TODO: May have to change the filepaths when you put the CSV files on the robot filesystem
-            leftTrajectory = PathfinderFRC.getTrajectory("Straight.left");
-            rightTrajectory = PathfinderFRC.getTrajectory("Straight.right");
+            // TODO: PathWeaver version < 3.1 swaps the left and right paths!
+            leftTrajectory = PathfinderFRC.getTrajectory("Straight.right");
+            rightTrajectory = PathfinderFRC.getTrajectory("Straight.left");
         } catch (IOException e) {
             e.printStackTrace();
         }
@@ -49,11 +50,11 @@ public class PathfinderSplineTest extends Command {
 
         leftFollower.configureEncoder(encoderLeft.get(), K_TICKS_PER_REVOLUTION, K_WHEEL_DIAMETER);
         // TODO: You must tune the PID values on the following line!
-        leftFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / K_MAX_VELOCITY, 0);
+        leftFollower.configurePIDVA(0.3, 0.0, 0.0, 1 / K_MAX_VELOCITY, 0);
 
         rightFollower.configureEncoder(encoderRight.get(), K_TICKS_PER_REVOLUTION, K_WHEEL_DIAMETER);
         // TODO: You must tune the PID values on the following line!
-        rightFollower.configurePIDVA(1.0, 0.0, 0.0, 1 / K_MAX_VELOCITY, 0);
+        rightFollower.configurePIDVA(0.3, 0.0, 0.0, 1 / K_MAX_VELOCITY, 0);
 
         // TODO: Maybe this is necessary?
         drivetrain.ZeroYaw();
@@ -68,13 +69,13 @@ public class PathfinderSplineTest extends Command {
         } else {
             double leftSpeed = leftFollower.calculate(encoderLeft.get());
             double rightSpeed = rightFollower.calculate(encoderRight.get());
-            // TODO: Not sure if yaw needs to be negated
-            double heading = -drivetrain.getAhrs().getFusedHeading();
+            // TODO: Not sure if heading needs to be negated
+            double heading = drivetrain.getAhrs().getAngle();
             // TODO: Not sure about orientation either so desiredHeading may also need to be negated
             double desiredHeading = Pathfinder.r2d(leftFollower.getHeading());
             double headingDifference = Pathfinder.boundHalfDegrees(desiredHeading - heading);
             double turn = 0.8 * (-1.0 / 80.0) * headingDifference;
-            drivetrain.setSpeeds(leftSpeed - turn, rightSpeed + turn);
+            drivetrain.setSpeeds(leftSpeed + turn, rightSpeed - turn);
 
             System.out.println("Heading: " + heading);
             System.out.println("Desired heading: " + desiredHeading);
