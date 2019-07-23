@@ -16,7 +16,6 @@ import jaci.pathfinder.modifiers.TankModifier;
 import java.io.IOException;
 
 import static frc.team2974.robot.Config.SmartDashboardKeys.*;
-import static frc.team2974.robot.Robot.drivetrain;
 import static frc.team2974.robot.RobotMap.*;
 
 public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
@@ -247,15 +246,15 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
             followerNotifier.stop();
         } else {
             double leftSpeed = leftFollower.calculate(getEncoderPositions()[0]);
-            double rightSpeed = rightFollower.calculate(getEncoderPositions()[0]);
+            double rightSpeed = rightFollower.calculate(getEncoderPositions()[1]);
             // TODO: Not sure if heading needs to be negated
             // TODO: Try fusedHeading() if this doesn't work
-            double heading = drivetrain.getAhrs().getAngle();
+            double heading = getAhrs().getAngle();
             // TODO: Not sure about orientation either so desiredHeading may also need to be negated
             double desiredHeading = Pathfinder.r2d(leftFollower.getHeading());
             double headingDifference = Pathfinder.boundHalfDegrees(desiredHeading - heading);
             double turn = 0.8 * (-1.0 / 80.0) * headingDifference;
-            drivetrain.setSpeeds(leftSpeed + turn, rightSpeed - turn);
+            setSpeeds(leftSpeed + turn, rightSpeed - turn);
 
             SmartDashboard.putNumber(PATHFINDER_HEADING, heading);
             SmartDashboard.putNumber(PATHFINDER_DESIRED_HEADING, desiredHeading);
