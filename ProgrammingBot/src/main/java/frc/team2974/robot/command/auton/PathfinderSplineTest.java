@@ -1,28 +1,11 @@
 package frc.team2974.robot.command.auton;
 
-import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.command.Command;
-import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import jaci.pathfinder.Pathfinder;
-import jaci.pathfinder.PathfinderFRC;
-import jaci.pathfinder.Trajectory;
-import jaci.pathfinder.followers.EncoderFollower;
+import jaci.pathfinder.Waypoint;
 
-import java.io.IOException;
-
-import static frc.team2974.robot.Config.PathfinderConstants.*;
-import static frc.team2974.robot.Config.SmartDashboardKeys.PATHFINDER_LEFT_MOTOR_SPEED;
-import static frc.team2974.robot.Config.SmartDashboardKeys.PATHFINDER_RIGHT_MOTOR_SPEED;
 import static frc.team2974.robot.Robot.drivetrain;
-import static frc.team2974.robot.RobotMap.encoderLeft;
-import static frc.team2974.robot.RobotMap.encoderRight;
 
 public class PathfinderSplineTest extends Command {
-
-    private EncoderFollower leftFollower;
-    private EncoderFollower rightFollower;
-
-    private Notifier followerNotifier;
 
     public PathfinderSplineTest() {
         requires(drivetrain);
@@ -32,64 +15,10 @@ public class PathfinderSplineTest extends Command {
     protected void initialize() {
         System.out.println("Initialized Pathfinder spline test.");
 
-        Trajectory leftTrajectory = null;
-        Trajectory rightTrajectory = null;
+        // Drive forward exactly 4 meters straight
 
-        try {
-            // TODO: PathWeaver supposedly swaps paths
-            // TODO: May have to change the filepaths when you put the CSV files on the robot filesystem
-            leftTrajectory = PathfinderFRC.getTrajectory("straight.left");
-            rightTrajectory = PathfinderFRC.getTrajectory("straight.right");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        leftFollower = new EncoderFollower(leftTrajectory);
-        rightFollower = new EncoderFollower(rightTrajectory);
-
-        leftFollower.configureEncoder(encoderLeft.get(), K_TICKS_PER_REVOLUTION, K_WHEEL_DIAMETER);
-        // TODO: You must tune the PID values on the following line!
-        leftFollower.configurePIDVA(0.3, 0.0, 0.0, 1 / K_MAX_VELOCITY, 0);
-
-        rightFollower.configureEncoder(encoderRight.get(), K_TICKS_PER_REVOLUTION, K_WHEEL_DIAMETER);
-        // TODO: You must tune the PID values on the following line!
-        rightFollower.configurePIDVA(0.3, 0.0, 0.0, 1 / K_MAX_VELOCITY, 0);
-
-        // TODO: Maybe this is necessary?
-        drivetrain.ZeroYaw();
-
-        followerNotifier = new Notifier(this::followPath);
-        followerNotifier.startPeriodic(leftTrajectory.get(0).dt);
-    }
-
-    private void followPath() {
-        if (leftFollower.isFinished() || rightFollower.isFinished()) {
-            followerNotifier.stop();
-        } else {
-            double leftSpeed = leftFollower.calculate(encoderLeft.get());
-            double rightSpeed = rightFollower.calculate(encoderRight.get());
-            // TODO: Not sure if heading needs to be negated
-            // TODO: Try fusedHeading() if this doesn't work
-            double heading = drivetrain.getAhrs().getAngle();
-            // TODO: Not sure about orientation either so desiredHeading may also need to be negated
-            double desiredHeading = Pathfinder.r2d(leftFollower.getHeading());
-            double headingDifference = Pathfinder.boundHalfDegrees(desiredHeading - heading);
-            double turn = 0.8 * (-1.0 / 80.0) * headingDifference;
-            drivetrain.setSpeeds(leftSpeed + turn, rightSpeed - turn);
-
-            System.out.println("Heading: " + heading);
-            System.out.println("Desired heading: " + desiredHeading);
-            System.out.println("Heading difference: " + headingDifference);
-            System.out.println("Turn: " + turn);
-
-            SmartDashboard.putNumber("Heading", heading);
-            SmartDashboard.putNumber("Desired heading", desiredHeading);
-            SmartDashboard.putNumber("Heading difference", headingDifference);
-            SmartDashboard.putNumber("Turn", turn);
-
-            SmartDashboard.putNumber(PATHFINDER_LEFT_MOTOR_SPEED, leftSpeed);
-            SmartDashboard.putNumber(PATHFINDER_RIGHT_MOTOR_SPEED, rightSpeed);
-        }
+        //drivetrain.followPathCSV("straight.left", "straight.right");
+        drivetrain.followPathSimple(new Waypoint[]{new Waypoint(0, 0, 0), new Waypoint(0, 4, 0)});
     }
 
     @Override
@@ -97,14 +26,13 @@ public class PathfinderSplineTest extends Command {
     }
 
     protected boolean isFinished() {
-        return leftFollower.isFinished() && rightFollower.isFinished();
+        return drivetrain.isDoneFollowingPath();
     }
 
     protected void end() {
         System.out.println("Ended Pathfinder spline test.");
 
-        followerNotifier.stop();
-        drivetrain.setSpeeds(0, 0);
+        drivetrain.stopMotion();
     }
 
     protected void interrupted() {

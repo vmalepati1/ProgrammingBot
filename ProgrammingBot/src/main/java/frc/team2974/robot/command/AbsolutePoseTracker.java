@@ -3,7 +3,6 @@ package frc.team2974.robot.command;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
-import static frc.team2974.robot.Config.RobotConstants.DISTANCE_BETWEEN_WHEELS;
 import static frc.team2974.robot.Config.SmartDashboardKeys.*;
 import static frc.team2974.robot.Robot.drivetrain;
 import static frc.team2974.robot.RobotMap.encoderLeft;
@@ -49,7 +48,7 @@ public class AbsolutePoseTracker extends Command {
         double dLeft = currentDistanceLeft - previousDistanceLeft;
         double dRight = currentDistanceRight - previousDistanceRight;
         double dCenter = (dLeft + dRight) / 2;
-        double theta = (dRight - dLeft) / DISTANCE_BETWEEN_WHEELS;
+        double theta = (dRight - dLeft) / drivetrain.getTrackWidth();
 
         currentPoseMatrix[0] = previousPoseMatrix[0] + dCenter * Math.cos(previousPoseMatrix[2]);
         currentPoseMatrix[1] = previousPoseMatrix[1] + dCenter * Math.sin(previousPoseMatrix[2]);

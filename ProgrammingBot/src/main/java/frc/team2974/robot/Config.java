@@ -40,28 +40,16 @@ public final class Config {
 
         public static final String TESTING_AUTON_SELECT = "Testing/Auton Select";
 
+        public static final String PATHFINDER_HEADING = "Pathfinder/Heading";
+        public static final String PATHFINDER_DESIRED_HEADING = "Pathfinder/Desired Heading";
+        public static final String PATHFINDER_HEADING_DIFFERENCE = "Pathfinder/Heading Difference";
+        public static final String PATHFINDER_TURN = "Pathfinder/Turn";
         public static final String PATHFINDER_LEFT_MOTOR_SPEED = "Pathfinder/Left Motor Speed";
         public static final String PATHFINDER_RIGHT_MOTOR_SPEED = "Pathfinder/Right Motor Speed";
 
         public static final String ABSOLUTE_POSE_X = "Absolute Pose/X";
         public static final String ABSOLUTE_POSE_Y = "Absolute Pose/Y";
         public static final String ABSOLUTE_POSE_ANGLE_DEGREES = "Absolute Pose/Angle (Degrees)";
-
-    }
-
-    public static final class PathfinderConstants {
-        public static final int K_TICKS_PER_REVOLUTION = 1024;
-        public static final double K_WHEEL_DIAMETER = 0.127;
-        public static final double K_MAX_VELOCITY = 2.634;
-
-        private PathfinderConstants() {
-        }
-    }
-
-    public static final class RobotConstants {
-
-        public static final double DISTANCE_PER_PULSE = 0.00038963112; // 0.000409
-        public static final double DISTANCE_BETWEEN_WHEELS = 0.78;
 
     }
 

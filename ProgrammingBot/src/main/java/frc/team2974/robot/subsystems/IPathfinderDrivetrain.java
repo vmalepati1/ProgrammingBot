@@ -19,7 +19,7 @@ public interface IPathfinderDrivetrain {
     /**
      * @return encoder ticks per revolution
      */
-    double getTicksPerRevolution();
+    int getTicksPerRevolution();
 
     /**
      * @return wheel diameter
@@ -27,9 +27,25 @@ public interface IPathfinderDrivetrain {
     double getWheelDiameter();
 
     /**
+     * @return time step between motor following updates in seconds (if
+     * using TimedRobot, it should be close to 0.02 seconds)
+     */
+    double getTimeStep();
+
+    /**
      * @return maximum velocity in units/sec
      */
     double getMaxVelocity();
+
+    /**
+     * @return maximum acceleration in units/sec^2
+     */
+    double getMaxAcceleration();
+
+    /**
+     * @return maximum jerk in units/sec^3
+     */
+    double getMaxJerk();
 
     /**
      * @return proportional gain constant for left drivetrain speed PID
@@ -60,7 +76,7 @@ public interface IPathfinderDrivetrain {
     double getRightFollowerKP();
 
     /**
-     * @returni ntegral gain constant for right drivetrain speed PID (set this
+     * @return integral gain constant for right drivetrain speed PID (set this
      * to zero as only proportional and (maybe) derivative constants are needed for motion profiling)
      */
     double getRightFollowerKI();
@@ -78,7 +94,7 @@ public interface IPathfinderDrivetrain {
     double getRightFollowerKA();
 
     /**
-     * @param leftSpeed: left drivetrain speed
+     * @param leftSpeed:  left drivetrain speed
      * @param rightSpeed: right drivetrain speed
      */
     void setSpeeds(double leftSpeed, double rightSpeed);
@@ -94,14 +110,24 @@ public interface IPathfinderDrivetrain {
     void resetEncoders();
 
     /**
+     * Sets the encoders' distance per pulse to getDistancePerPulse()
+     */
+    void setDistancePerPulse();
+
+    /**
      * Zero the yaw on the rotational tracking device.
      */
     void zeroYaw();
 
     /**
-     * @return drivetrain encoder positions
+     * @return drivetrain encoder positions (in ticks)
      */
-    double[] getEncoderPositions();
+    int[] getEncoderPositions();
+
+    /**
+     * @return drivetrain encoder distances
+     */
+    double[] getEncoderDistances();
 
     /**
      * @param controlPoints: control points of Hermite cubic spline to follow
@@ -109,9 +135,19 @@ public interface IPathfinderDrivetrain {
     void followPathSimple(Waypoint[] controlPoints);
 
     /**
-     * @param leftTrajectoryFilepath: filepath to left trajectory file with file extension ".left" (ex: "straight.left")
+     * @param leftTrajectoryFilepath:  filepath to left trajectory file with file extension ".left" (ex: "straight.left")
      * @param rightTrajectoryFilepath: filepath to right trajectory file with file extension ".right" (ex: "straight.right")
      */
     void followPathCSV(String leftTrajectoryFilepath, String rightTrajectoryFilepath);
+
+    /**
+     * @return whether the currently queued path is still running
+     */
+    boolean isFollowingPath();
+
+    /**
+     * @return whether the currently queued path finished
+     */
+    boolean isDoneFollowingPath();
 
 }
