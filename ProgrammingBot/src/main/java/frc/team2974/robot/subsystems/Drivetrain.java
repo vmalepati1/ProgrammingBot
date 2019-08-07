@@ -108,7 +108,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public double getLeftFollowerKP() {
-        return 0.3;
+        return 0.0015;
     }
 
     @Override
@@ -128,7 +128,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public double getRightFollowerKP() {
-        return 0.3;
+        return 0.00001;
     }
 
     @Override
@@ -150,6 +150,8 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
     public void setSpeeds(double leftPower, double rightPower) {
         motorRight.set(leftPower);
         motorLeft.set(rightPower);
+        System.out.println(leftPower);
+        System.out.println(rightPower);
     }
 
     @Override
@@ -224,7 +226,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     private void startFollowingNotifier(Trajectory leftTrajectory, Trajectory rightTrajectory) {
         // Stop any previously queued path
-        followerNotifier.stop();
+        // followerNotifier.stop();
 
         leftFollower = new EncoderFollower(leftTrajectory);
         rightFollower = new EncoderFollower(rightTrajectory);

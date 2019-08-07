@@ -15,14 +15,14 @@ public class Drive extends Command {
         if (Math.abs(leftJoystick.getY()) < 0.3) {
             return 0;
         }
-        return leftJoystick.getY();
+        return -leftJoystick.getY();
     }
 
     public double getRightThrottle() {
         if (Math.abs(rightJoystick.getY()) < 0.3) {
             return 0;
         }
-        return rightJoystick.getY();
+        return -rightJoystick.getY();
     }
 
     private void tankDrive() {

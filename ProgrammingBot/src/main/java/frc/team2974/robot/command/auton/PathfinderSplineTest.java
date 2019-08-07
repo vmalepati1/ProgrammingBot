@@ -17,8 +17,8 @@ public class PathfinderSplineTest extends Command {
 
         // Drive forward exactly 4 meters straight
 
-        drivetrain.followPathCSV("straight.left", "straight.right");
-        // drivetrain.followPathSimple(new Waypoint[]{new Waypoint(0, 0, 0), new Waypoint(0, 4, 0)});
+        drivetrain.followPathCSV("curved.left", "curved.right");
+        //drivetrain.followPathSimple(new Waypoint[]{new Waypoint(0, 0, 0), new Waypoint(0, 4, 0)});
     }
 
     @Override
