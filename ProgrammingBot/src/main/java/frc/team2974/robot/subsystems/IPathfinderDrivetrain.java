@@ -2,6 +2,9 @@ package frc.team2974.robot.subsystems;
 
 import jaci.pathfinder.Waypoint;
 
+/**
+ *
+ */
 public interface IPathfinderDrivetrain {
 
     /* Note: All distance measurements should use the same unit. */
@@ -98,6 +101,12 @@ public interface IPathfinderDrivetrain {
      * @param rightSpeed: right drivetrain speed
      */
     void setSpeeds(double leftSpeed, double rightSpeed);
+
+    /**
+     * @param xSpeed: speed/throttle
+     * @param zRotation: rotation rate
+     */
+    void setArcadeSpeeds(double xSpeed, double zRotation);
 
     /**
      * Set drivetrain speeds to zero.

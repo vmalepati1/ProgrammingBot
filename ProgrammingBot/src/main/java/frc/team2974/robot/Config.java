@@ -51,6 +51,12 @@ public final class Config {
         public static final String ABSOLUTE_POSE_Y = "Absolute Pose/Y";
         public static final String ABSOLUTE_POSE_ANGLE_DEGREES = "Absolute Pose/Angle (Degrees)";
 
+        public static final String VISION_STEER_K = "Vision/Steer K";
+        public static final String VISION_DRIVE_K = "Vision/Drive K";
+        public static final String VISION_DESIRED_TARGET_AREA = "Vision/Desired Target Area";
+        public static final String VISION_MAX_DRIVE = "Vision/Max Drive";
+        public static final String VISION_PERCENT_OF_TRAJECTORY = "Vision/Percent Of Trajectory";
+
     }
 
 }

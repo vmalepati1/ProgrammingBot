@@ -1,6 +1,7 @@
 package frc.team2974.robot.subsystems;
 
 import com.kauailabs.navx.frc.AHRS;
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.command.Subsystem;
@@ -26,6 +27,16 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
     private EncoderFollower rightFollower;
     private Notifier followerNotifier;
 
+    private Trajectory leftTrajectory;
+    private Trajectory rightTrajectory;
+
+    private int segmentNumber;
+    private boolean isAligning;
+
+    private boolean limelightHasValidTarget;
+    private double limelightDriveCommand;
+    private double limelightSteerCommand;
+
     public Drivetrain() {
         motorLeft.setInverted(true);
 
@@ -41,6 +52,20 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         }
 
         followerNotifier = new Notifier(this::followPath);
+
+        try {
+            leftTrajectory = PathfinderFRC.getTrajectory("ToRocketLeft.left");
+            rightTrajectory = PathfinderFRC.getTrajectory("ToRocketLeft.right");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        segmentNumber = 0;
+        isAligning = false;
+
+        limelightHasValidTarget = false;
+        limelightDriveCommand = 0.0;
+        limelightSteerCommand = 0.0;
 
         compressor.stop();
     }
@@ -59,6 +84,18 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     public boolean isShiftDown() {
         return pneumaticsShifter.get();
+    }
+
+    public boolean isLimelightHasValidTarget() {
+        return limelightHasValidTarget;
+    }
+
+    public double getLimelightDriveCommand() {
+        return limelightDriveCommand;
+    }
+
+    public double getLimelightSteerCommand() {
+        return limelightSteerCommand;
     }
 
     @Override
@@ -148,10 +185,26 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public void setSpeeds(double leftPower, double rightPower) {
-        motorRight.set(leftPower);
         motorLeft.set(rightPower);
-        System.out.println(leftPower);
-        System.out.println(rightPower);
+        motorRight.set(leftPower);
+    }
+
+    @Override
+    public void setArcadeSpeeds(double xSpeed, double zRotation) {
+        xSpeed = Math.copySign(xSpeed * xSpeed, xSpeed);
+        zRotation = Math.copySign(zRotation * zRotation, zRotation);
+
+        double leftMotorOutput;
+        double rightMotorOutput;
+
+        xSpeed = Math
+                .max(-1.0 + Math.abs(zRotation),
+                        Math.min(1.0 - Math.abs(zRotation), xSpeed));
+
+        leftMotorOutput = xSpeed + zRotation;
+        rightMotorOutput = xSpeed - zRotation;
+
+        setSpeeds(leftMotorOutput, rightMotorOutput);
     }
 
     @Override
@@ -201,6 +254,13 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public void followPathCSV(String leftTrajectoryFilepath, String rightTrajectoryFilepath) {
+
+    }
+
+    // @Override
+    public void followPathCSV(/* String leftTrajectoryFilepath, String rightTrajectoryFilepath */) {
+        // Temporary offload to constructor
+        /*
         Trajectory leftTrajectory = null;
         Trajectory rightTrajectory = null;
 
@@ -210,6 +270,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         } catch (IOException e) {
             e.printStackTrace();
         }
+        */
 
         startFollowingNotifier(leftTrajectory, rightTrajectory);
     }
@@ -240,13 +301,22 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         // TODO: Maybe this is necessary?
         zeroYaw();
 
+        segmentNumber = 0;
+        isAligning = false;
+
         followerNotifier.startPeriodic(leftTrajectory.get(0).dt);
     }
 
     private void followPath() {
+        updateLimelightTracking();
+
         if (isDoneFollowingPath()) {
             followerNotifier.stop();
-        } else {
+        } else if (limelightHasValidTarget &&
+                segmentNumber >= Math.round(leftTrajectory.length() * SmartDashboard.getNumber(VISION_PERCENT_OF_TRAJECTORY, 0.75))) {
+            isAligning = true;
+            setArcadeSpeeds(limelightDriveCommand, limelightSteerCommand);
+        } else if (!isAligning) {
             double leftSpeed = leftFollower.calculate(getEncoderPositions()[0]);
             double rightSpeed = rightFollower.calculate(getEncoderPositions()[1]);
             // TODO: Not sure if heading needs to be negated
@@ -264,7 +334,41 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
             SmartDashboard.putNumber(PATHFINDER_TURN, turn);
             SmartDashboard.putNumber(PATHFINDER_LEFT_MOTOR_SPEED, leftSpeed);
             SmartDashboard.putNumber(PATHFINDER_RIGHT_MOTOR_SPEED, rightSpeed);
+
+            segmentNumber++;
         }
+    }
+
+    public void updateLimelightTracking() {
+        final double STEER_K = SmartDashboard.getNumber(VISION_STEER_K, 0.015);
+        final double DRIVE_K = SmartDashboard.getNumber(VISION_DRIVE_K, 0.1);
+        final double DESIRED_TARGET_AREA = SmartDashboard.getNumber(VISION_DESIRED_TARGET_AREA, 13);
+        final double MAX_DRIVE = SmartDashboard.getNumber(VISION_MAX_DRIVE, 0.8);
+
+        double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
+        double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+        double ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
+        double ta = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ta").getDouble(0);
+
+        if (tv < 1.0) {
+            limelightHasValidTarget = false;
+            limelightDriveCommand = 0.0;
+            limelightSteerCommand = 0.0;
+            return;
+        }
+
+        limelightHasValidTarget = true;
+
+        double steerCmd = tx * STEER_K;
+        limelightSteerCommand = steerCmd;
+
+        double driveCmd = (DESIRED_TARGET_AREA - ta) * DRIVE_K;
+
+        if (driveCmd > MAX_DRIVE) {
+            driveCmd = MAX_DRIVE;
+        }
+
+        limelightDriveCommand = driveCmd;
     }
 
 }

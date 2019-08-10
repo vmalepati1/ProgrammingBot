@@ -24,10 +24,10 @@ public final class RobotMap {
         motorLeft = new Talon(LEFT_MOTOR_CHANNEL);
         motorRight = new Talon(RIGHT_MOTOR_CHANNEL);
 
-        encoderRight = new Encoder(new DigitalInput(RIGHT_ENCODER_CHANNEL1),
-                new DigitalInput(RIGHT_ENCODER_CHANNEL2));
         encoderLeft = new Encoder(new DigitalInput(LEFT_ENCODER_CHANNEL1),
                 new DigitalInput(LEFT_ENCODER_CHANNEL2));
+        encoderRight = new Encoder(new DigitalInput(RIGHT_ENCODER_CHANNEL1),
+                new DigitalInput(RIGHT_ENCODER_CHANNEL2));
 
         compressor = new Compressor();
         pneumaticsShifter = new Solenoid(SHIFTER_CHANNEL);
