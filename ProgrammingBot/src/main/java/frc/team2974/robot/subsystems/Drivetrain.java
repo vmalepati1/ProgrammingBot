@@ -6,6 +6,7 @@ import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.SPI;
 import edu.wpi.first.wpilibj.command.Subsystem;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
+import frc.team2974.robot.Config;
 import frc.team2974.robot.command.teleop.Drive;
 import jaci.pathfinder.Pathfinder;
 import jaci.pathfinder.PathfinderFRC;
@@ -16,7 +17,9 @@ import jaci.pathfinder.modifiers.TankModifier;
 
 import java.io.IOException;
 
+import static frc.team2974.robot.Config.PathfinderConstantsDefaults.*;
 import static frc.team2974.robot.Config.SmartDashboardKeys.*;
+import static frc.team2974.robot.Config.VisionConstantsDefaults.*;
 import static frc.team2974.robot.RobotMap.*;
 
 public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
@@ -27,11 +30,12 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
     private EncoderFollower rightFollower;
     private Notifier followerNotifier;
 
-    private Trajectory leftTrajectory;
-    private Trajectory rightTrajectory;
-
-    private int segmentNumber;
-    private boolean isAligning;
+    private double tv;
+    private double tx;
+    private double ty;
+    private double ta;
+    private double camtran[];
+    private double camtranDefaults[] = {0.0, 0.0, 0.0, 0.0, 0.0, 0.0};
 
     private boolean limelightHasValidTarget;
     private double limelightDriveCommand;
@@ -53,15 +57,11 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
         followerNotifier = new Notifier(this::followPath);
 
-        try {
-            leftTrajectory = PathfinderFRC.getTrajectory("ToRocketLeft.left");
-            rightTrajectory = PathfinderFRC.getTrajectory("ToRocketLeft.right");
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-
-        segmentNumber = 0;
-        isAligning = false;
+        tv = 0;
+        tx = 0;
+        ty = 0;
+        ta = 0;
+        camtran = new double[6];
 
         limelightHasValidTarget = false;
         limelightDriveCommand = 0.0;
@@ -86,6 +86,27 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         return pneumaticsShifter.get();
     }
 
+
+    public double getTv() {
+        return tv;
+    }
+
+    public double getTx() {
+        return tx;
+    }
+
+    public double getTy() {
+        return ty;
+    }
+
+    public double getTa() {
+        return ta;
+    }
+
+    public double[] getCamtran() {
+        return camtran;
+    }
+
     public boolean isLimelightHasValidTarget() {
         return limelightHasValidTarget;
     }
@@ -96,6 +117,16 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     public double getLimelightSteerCommand() {
         return limelightSteerCommand;
+    }
+
+    public void setLimelightAutoAlignPipeline() {
+        NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline")
+                .setDouble(Config.Camera.AUTO_ALIGN_PIPELINE);
+    }
+
+    public void setLimelightDriverPipeline() {
+        NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline").
+                setDouble(Config.Camera.DRIVER_PIPELINE);
     }
 
     @Override
@@ -145,7 +176,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public double getLeftFollowerKP() {
-        return 0.0015;
+        return SmartDashboard.getNumber(PATHFINDER_LEFT_FOLLOWER_KP, PATHFINDER_LEFT_FOLLOWER_KP_DEFAULT);
     }
 
     @Override
@@ -155,7 +186,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public double getLeftFollowerKD() {
-        return 0;
+        return SmartDashboard.getNumber(PATHFINDER_LEFT_FOLLOWER_KD, PATHFINDER_LEFT_FOLLOWER_KD_DEFAULT);
     }
 
     @Override
@@ -165,7 +196,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public double getRightFollowerKP() {
-        return 0.00001;
+        return SmartDashboard.getNumber(PATHFINDER_RIGHT_FOLLOWER_KP, PATHFINDER_RIGHT_FOLLOWER_KP_DEFAULT);
     }
 
     @Override
@@ -175,7 +206,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public double getRightFollowerKD() {
-        return 0;
+        return SmartDashboard.getNumber(PATHFINDER_RIGHT_FOLLOWER_KD, PATHFINDER_RIGHT_FOLLOWER_KD_DEFAULT);
     }
 
     @Override
@@ -254,13 +285,6 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
     @Override
     public void followPathCSV(String leftTrajectoryFilepath, String rightTrajectoryFilepath) {
-
-    }
-
-    // @Override
-    public void followPathCSV(/* String leftTrajectoryFilepath, String rightTrajectoryFilepath */) {
-        // Temporary offload to constructor
-        /*
         Trajectory leftTrajectory = null;
         Trajectory rightTrajectory = null;
 
@@ -270,7 +294,6 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         } catch (IOException e) {
             e.printStackTrace();
         }
-        */
 
         startFollowingNotifier(leftTrajectory, rightTrajectory);
     }
@@ -285,9 +308,16 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         return leftFollower.isFinished() || rightFollower.isFinished();
     }
 
+    public boolean isAligned() {
+        // TODO: Figure out conditions for alignment
+        return limelightHasValidTarget &&
+                Math.abs(camtran[0]) < SmartDashboard.getNumber(VISION_ALIGNED_X_PLUS_MINUS, VISION_ALIGNED_X_PLUS_MINUS_DEFAULT) &&
+                Math.abs(camtran[2]) < SmartDashboard.getNumber(VISION_ALIGNED_Z_PLUS_MINUS, VISION_ALIGNED_Z_PLUS_MINUS_DEFAULT);
+    }
+
     private void startFollowingNotifier(Trajectory leftTrajectory, Trajectory rightTrajectory) {
         // Stop any previously queued path
-        // followerNotifier.stop();
+        followerNotifier.stop();
 
         leftFollower = new EncoderFollower(leftTrajectory);
         rightFollower = new EncoderFollower(rightTrajectory);
@@ -301,9 +331,6 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         // TODO: Maybe this is necessary?
         zeroYaw();
 
-        segmentNumber = 0;
-        isAligning = false;
-
         followerNotifier.startPeriodic(leftTrajectory.get(0).dt);
     }
 
@@ -312,11 +339,7 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
 
         if (isDoneFollowingPath()) {
             followerNotifier.stop();
-        } else if (limelightHasValidTarget &&
-                segmentNumber >= Math.round(leftTrajectory.length() * SmartDashboard.getNumber(VISION_PERCENT_OF_TRAJECTORY, 0.75))) {
-            isAligning = true;
-            setArcadeSpeeds(limelightDriveCommand, limelightSteerCommand);
-        } else if (!isAligning) {
+        } else {
             double leftSpeed = leftFollower.calculate(getEncoderPositions()[0]);
             double rightSpeed = rightFollower.calculate(getEncoderPositions()[1]);
             // TODO: Not sure if heading needs to be negated
@@ -334,21 +357,20 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
             SmartDashboard.putNumber(PATHFINDER_TURN, turn);
             SmartDashboard.putNumber(PATHFINDER_LEFT_MOTOR_SPEED, leftSpeed);
             SmartDashboard.putNumber(PATHFINDER_RIGHT_MOTOR_SPEED, rightSpeed);
-
-            segmentNumber++;
         }
     }
 
     public void updateLimelightTracking() {
-        final double STEER_K = SmartDashboard.getNumber(VISION_STEER_K, 0.015);
-        final double DRIVE_K = SmartDashboard.getNumber(VISION_DRIVE_K, 0.1);
-        final double DESIRED_TARGET_AREA = SmartDashboard.getNumber(VISION_DESIRED_TARGET_AREA, 13);
-        final double MAX_DRIVE = SmartDashboard.getNumber(VISION_MAX_DRIVE, 0.8);
+        final double STEER_K = SmartDashboard.getNumber(VISION_STEER_K, VISION_STEER_K_DEFAULT);
+        final double DRIVE_K = SmartDashboard.getNumber(VISION_DRIVE_K, VISION_DRIVE_K_DEFAULT);
+        final double DESIRED_TARGET_AREA = SmartDashboard.getNumber(VISION_DESIRED_TARGET_AREA, VISION_DESIRED_TARGET_AREA_DEFAULT);
+        final double MAX_DRIVE = SmartDashboard.getNumber(VISION_MAX_DRIVE, VISION_MAX_DRIVE_DEFAULT);
 
-        double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
-        double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
-        double ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
-        double ta = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ta").getDouble(0);
+        tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
+        tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+        ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
+        ta = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ta").getDouble(0);
+        camtran = NetworkTableInstance.getDefault().getTable("limelight").getEntry("camtran").getDoubleArray(camtranDefaults);
 
         if (tv < 1.0) {
             limelightHasValidTarget = false;

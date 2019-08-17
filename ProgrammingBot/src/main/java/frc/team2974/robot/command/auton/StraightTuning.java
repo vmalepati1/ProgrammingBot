@@ -1,41 +1,43 @@
 package frc.team2974.robot.command.auton;
 
 import edu.wpi.first.wpilibj.command.Command;
-import jaci.pathfinder.Waypoint;
 
 import static frc.team2974.robot.Robot.drivetrain;
 
-public class PathfinderSplineTest extends Command {
+public class StraightTuning extends Command {
 
-    public PathfinderSplineTest() {
+    public StraightTuning() {
         requires(drivetrain);
     }
 
     @Override
     protected void initialize() {
-        System.out.println("Initialized Pathfinder spline test.");
+        System.out.println("Initialized straight tuning.");
 
         // Drive forward exactly 4 meters straight
 
-        drivetrain.followPathCSV();
-        //drivetrain.followPathSimple(new Waypoint[]{new Waypoint(0, 0, 0), new Waypoint(0, 4, 0)});
+        drivetrain.followPathCSV("Straight4Meter.left", "Straight4Meter.right");
     }
 
     @Override
     protected void execute() {
     }
 
+    @Override
     protected boolean isFinished() {
         return drivetrain.isDoneFollowingPath();
     }
 
+    @Override
     protected void end() {
-        System.out.println("Ended Pathfinder spline test.");
+        System.out.println("Ended straight tuning.");
 
         drivetrain.stopMotion();
     }
 
+    @Override
     protected void interrupted() {
+        System.out.println("Straight tuning interrupted.");
         end();
     }
 

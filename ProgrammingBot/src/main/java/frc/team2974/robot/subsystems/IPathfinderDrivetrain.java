@@ -103,7 +103,7 @@ public interface IPathfinderDrivetrain {
     void setSpeeds(double leftSpeed, double rightSpeed);
 
     /**
-     * @param xSpeed: speed/throttle
+     * @param xSpeed:    speed/throttle
      * @param zRotation: rotation rate
      */
     void setArcadeSpeeds(double xSpeed, double zRotation);

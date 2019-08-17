@@ -3,21 +3,23 @@ package frc.team2974.robot;
 import edu.wpi.first.networktables.NetworkTable;
 import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.DriverStation;
-import edu.wpi.first.wpilibj.Notifier;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 import frc.team2974.robot.command.AbsolutePoseTracker;
-import frc.team2974.robot.command.auton.PathfinderSplineTest;
+import frc.team2974.robot.command.auton.StraightTuning;
+import frc.team2974.robot.command.auton.TwoCubeAuton;
 import frc.team2974.robot.command.teleop.Drive;
 import frc.team2974.robot.subsystems.Drivetrain;
-import jaci.pathfinder.followers.EncoderFollower;
 
 import javax.management.*;
 import java.lang.management.ManagementFactory;
 
+import static frc.team2974.robot.Config.PathfinderConstantsDefaults.*;
+import static frc.team2974.robot.Config.SmartDashboardKeys.*;
+import static frc.team2974.robot.Config.VisionConstantsDefaults.*;
 import static frc.team2974.robot.RobotMap.encoderLeft;
 import static frc.team2974.robot.RobotMap.encoderRight;
 
@@ -31,6 +33,37 @@ public class Robot extends TimedRobot {
     public static Drivetrain drivetrain;
     public static OI oi;
     public static NetworkTable waltonDashboard;
+    private SendableChooser<Command> autonSelect;
+
+    private void initShuffleBoard() {
+        SmartDashboard.putNumber(PATHFINDER_HEADING, 0);
+        SmartDashboard.putNumber(PATHFINDER_DESIRED_HEADING, 0);
+        SmartDashboard.putNumber(PATHFINDER_HEADING_DIFFERENCE, 0);
+        SmartDashboard.putNumber(PATHFINDER_TURN, 0);
+        SmartDashboard.putNumber(PATHFINDER_LEFT_MOTOR_SPEED, 0);
+        SmartDashboard.putNumber(PATHFINDER_RIGHT_MOTOR_SPEED, 0);
+
+        SmartDashboard.putNumber(PATHFINDER_LEFT_FOLLOWER_KP, PATHFINDER_LEFT_FOLLOWER_KP_DEFAULT);
+        SmartDashboard.putNumber(PATHFINDER_LEFT_FOLLOWER_KD, PATHFINDER_LEFT_FOLLOWER_KD_DEFAULT);
+        SmartDashboard.putNumber(PATHFINDER_RIGHT_FOLLOWER_KP, PATHFINDER_RIGHT_FOLLOWER_KP_DEFAULT);
+        SmartDashboard.putNumber(PATHFINDER_RIGHT_FOLLOWER_KD, PATHFINDER_RIGHT_FOLLOWER_KD_DEFAULT);
+
+        SmartDashboard.putNumber(ABSOLUTE_POSE_X, 0);
+        SmartDashboard.putNumber(ABSOLUTE_POSE_Y, 0);
+        SmartDashboard.putNumber(ABSOLUTE_POSE_ANGLE_DEGREES, 0);
+
+        SmartDashboard.putNumber(VISION_STEER_K, VISION_STEER_K_DEFAULT);
+        SmartDashboard.putNumber(VISION_DRIVE_K, VISION_DRIVE_K_DEFAULT);
+        SmartDashboard.putNumber(VISION_DESIRED_TARGET_AREA, VISION_DESIRED_TARGET_AREA_DEFAULT);
+        SmartDashboard.putNumber(VISION_MAX_DRIVE, VISION_MAX_DRIVE_DEFAULT);
+        SmartDashboard.putNumber(VISION_ALIGNED_X_PLUS_MINUS, VISION_ALIGNED_X_PLUS_MINUS_DEFAULT);
+        SmartDashboard.putNumber(VISION_ALIGNED_Z_PLUS_MINUS, VISION_ALIGNED_Z_PLUS_MINUS_DEFAULT);
+
+        autonSelect = new SendableChooser<>();
+        autonSelect.setDefaultOption("Straight Tuning", new StraightTuning());
+        autonSelect.addOption("Two Cube Auton", new TwoCubeAuton());
+        SmartDashboard.putData(AUTON_COMMAND_GROUP, autonSelect);
+    }
 
     @Override
     public void robotInit() {
@@ -44,6 +77,9 @@ public class Robot extends TimedRobot {
         drivetrain.shiftDown();
 
         AbsolutePoseTracker.setStartingPose(new double[]{0, 0, Math.PI / 2});
+        AbsolutePoseTracker.getInstance().start();
+
+        initShuffleBoard();
     }
 
     private double getRIOCPUUse() throws MalformedObjectNameException, ReflectionException, InstanceNotFoundException {
@@ -84,7 +120,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void disabledInit() {
-        new AbsolutePoseTracker().start();
+
     }
 
     @Override
@@ -94,11 +130,9 @@ public class Robot extends TimedRobot {
 
     @Override
     public void autonomousInit() {
-        new AbsolutePoseTracker().start();
-
         drivetrain.shiftDown();
 
-        new PathfinderSplineTest().start();
+        autonSelect.getSelected().start();
     }
 
     @Override
@@ -108,8 +142,6 @@ public class Robot extends TimedRobot {
 
     @Override
     public void teleopInit() {
-        new AbsolutePoseTracker().start();
-
         new Drive().start();
 
         drivetrain.shiftUp();

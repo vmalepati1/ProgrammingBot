@@ -10,6 +10,8 @@ import static frc.team2974.robot.RobotMap.encoderRight;
 
 public class AbsolutePoseTracker extends Command {
 
+    private static AbsolutePoseTracker instance;
+
     private static double previousPoseMatrix[];
     private static double currentPoseMatrix[];
 
@@ -24,6 +26,13 @@ public class AbsolutePoseTracker extends Command {
         previousPoseMatrix = startingPose;
         previousDistanceLeft = encoderLeft.getDistance();
         previousDistanceRight = encoderRight.getDistance();
+    }
+
+    public static AbsolutePoseTracker getInstance() {
+        if (instance == null) {
+            instance = new AbsolutePoseTracker();
+        }
+        return instance;
     }
 
     public static double[] getCurrentPoseMatrix() {
