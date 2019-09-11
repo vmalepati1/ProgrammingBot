@@ -5,8 +5,9 @@ import edu.wpi.first.wpilibj.command.CommandGroup;
 public class TwoCubeAuton extends CommandGroup {
 
     public TwoCubeAuton() {
-        addSequential(new DriveToRocket());
-        addSequential(new VisionCorrection());
+        addSequential(new GeneralCurve());
+        addSequential(new WaitForTx());
+        addSequential(new VisionLine());
     }
 
     @Override

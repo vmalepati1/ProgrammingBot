@@ -20,6 +20,8 @@ import java.io.IOException;
 import static frc.team2974.robot.Config.PathfinderConstantsDefaults.*;
 import static frc.team2974.robot.Config.SmartDashboardKeys.*;
 import static frc.team2974.robot.Config.VisionConstantsDefaults.*;
+import static frc.team2974.robot.OI.leftJoystick;
+import static frc.team2974.robot.OI.rightJoystick;
 import static frc.team2974.robot.RobotMap.*;
 
 public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
@@ -40,6 +42,9 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
     private boolean limelightHasValidTarget;
     private double limelightDriveCommand;
     private double limelightSteerCommand;
+
+    private double lastLeftMax;
+    private double lastRightMax;
 
     public Drivetrain() {
         motorLeft.setInverted(true);
@@ -68,6 +73,9 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         limelightSteerCommand = 0.0;
 
         compressor.stop();
+
+        lastLeftMax = 1;
+        lastRightMax = 1;
     }
 
     public AHRS getAhrs() {
@@ -298,6 +306,10 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         startFollowingNotifier(leftTrajectory, rightTrajectory);
     }
 
+    public void followTrajectory(Trajectory leftTrajectory, Trajectory rightTrajectory) {
+        startFollowingNotifier(leftTrajectory, rightTrajectory);
+    }
+
     @Override
     public boolean isFollowingPath() {
         return !isDoneFollowingPath();
@@ -342,6 +354,25 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         } else {
             double leftSpeed = leftFollower.calculate(getEncoderPositions()[0]);
             double rightSpeed = rightFollower.calculate(getEncoderPositions()[1]);
+
+            if (leftSpeed > lastLeftMax) {
+                lastLeftMax = leftSpeed;
+            }
+
+            if (rightSpeed > lastRightMax) {
+                lastRightMax = rightSpeed;
+            }
+
+            if (leftSpeed > 1) {
+                leftSpeed /= lastLeftMax;
+                rightSpeed /= lastLeftMax;
+            }
+
+            if (rightSpeed > 1) {
+                leftSpeed /= lastRightMax;
+                rightSpeed /= lastRightMax;
+            }
+
             // TODO: Not sure if heading needs to be negated
             // TODO: Try fusedHeading() if this doesn't work
             double heading = getAhrs().getAngle();
@@ -360,35 +391,75 @@ public class Drivetrain extends Subsystem implements IPathfinderDrivetrain {
         }
     }
 
-    public void updateLimelightTracking() {
-        final double STEER_K = SmartDashboard.getNumber(VISION_STEER_K, VISION_STEER_K_DEFAULT);
-        final double DRIVE_K = SmartDashboard.getNumber(VISION_DRIVE_K, VISION_DRIVE_K_DEFAULT);
-        final double DESIRED_TARGET_AREA = SmartDashboard.getNumber(VISION_DESIRED_TARGET_AREA, VISION_DESIRED_TARGET_AREA_DEFAULT);
-        final double MAX_DRIVE = SmartDashboard.getNumber(VISION_MAX_DRIVE, VISION_MAX_DRIVE_DEFAULT);
+    private double getLeftThrottle() {
+        if (Math.abs(leftJoystick.getY()) < 0.3) {
+            return 0;
+        }
+        return -leftJoystick.getY();
+    }
 
-        tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
-        tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
-        ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
-        ta = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ta").getDouble(0);
-        camtran = NetworkTableInstance.getDefault().getTable("limelight").getEntry("camtran").getDoubleArray(camtranDefaults);
+    private double getRightThrottle() {
+        if (Math.abs(rightJoystick.getY()) < 0.3) {
+            return 0;
+        }
+        return -rightJoystick.getY();
+    }
+
+    public void updateLimelightTracking() {
+        // These numbers must be tuned for your Robot!  Be careful!
+        double STEER_K = SmartDashboard.getNumber("Steer K", 0.05); // how hard to turn toward the target
+        double STEER_B = SmartDashboard.getNumber("Steer B", 0.1);
+        double DRIVE_K = SmartDashboard
+                .getNumber("Drive K", 0.26); // how hard to drive fwd toward the target
+
+        double tv = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tv").getDouble(0);
+        double tx = NetworkTableInstance.getDefault().getTable("limelight").getEntry("tx").getDouble(0);
+        double ty = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ty").getDouble(0);
+        double ta = NetworkTableInstance.getDefault().getTable("limelight").getEntry("ta").getDouble(0);
+
+//    System.out.println(String.format("%s, %s, %s, %s", tx, ty, ta, tv));
 
         if (tv < 1.0) {
             limelightHasValidTarget = false;
             limelightDriveCommand = 0.0;
             limelightSteerCommand = 0.0;
             return;
+        } else {
+            limelightHasValidTarget = true;
         }
 
-        limelightHasValidTarget = true;
+        // Start with proportional steering
+        double distance =
+                (0.0003645262 * ty * ty * ty) + (-0.0008723340 * ty * ty) + (0.0425549550 * ty)
+                        + 0.5546679097;
+        SmartDashboard.putNumber("Camera Distance", distance);
 
-        double steerCmd = tx * STEER_K;
+        distance = Math.max(0.75, distance);
+        distance = Math.min(5, distance);
+
+        double f = 1 - STEER_B * Math.pow(ta - 2, 2);
+
+        double steerCmd = (tx * STEER_K * f) / distance;
         limelightSteerCommand = steerCmd;
 
-        double driveCmd = (DESIRED_TARGET_AREA - ta) * DRIVE_K;
+        // try to drive forward until the target area reaches our desired area
+        double driveCmd = (getLeftThrottle() + getRightThrottle()) / 2.0;
+//    double maxSpeed = 1;
+//    double minSpeed = .3;
+//    double driveCmd;
+//
+//    double decelerationDistance = 1.5;
+//    double minDistance = .5;
+//    double alpha = (distance - minDistance) / (decelerationDistance - minDistance);
+//
+//    alpha = Math.max(0, Math.min(1, alpha));
+//
+//    driveCmd = alpha * maxSpeed + (1 - alpha) * minSpeed;
+//    driveCmd = Math.min(1, driveCmd);
+//
+//    SmartDashboard.putNumber("Drive Speed", driveCmd);
+//    SmartDashboard.putNumber("Alpha", alpha);
 
-        if (driveCmd > MAX_DRIVE) {
-            driveCmd = MAX_DRIVE;
-        }
 
         limelightDriveCommand = driveCmd;
     }

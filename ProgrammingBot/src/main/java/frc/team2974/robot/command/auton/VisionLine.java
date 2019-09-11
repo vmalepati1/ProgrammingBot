@@ -1,29 +1,43 @@
 package frc.team2974.robot.command.auton;
 
 import edu.wpi.first.wpilibj.command.Command;
+import jaci.pathfinder.PathfinderFRC;
+import jaci.pathfinder.Trajectory;
+
+import java.io.IOException;
 
 import static frc.team2974.robot.Robot.drivetrain;
 
-public class VisionCorrection extends Command {
+public class VisionLine extends Command {
 
-    public VisionCorrection() {
+    public VisionLine() {
         requires(drivetrain);
     }
 
     @Override
     protected void initialize() {
         System.out.println("Initialized vision correction.");
+
+        Trajectory leftTrajectory = null;
+        Trajectory rightTrajectory = null;
+
+        try {
+            leftTrajectory = PathfinderFRC.getTrajectory("VisionLine.left");
+            rightTrajectory = PathfinderFRC.getTrajectory("VisionLine.right");
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+
+        for (int i = 0; i < rightTrajectory.segments.length; i++) {
+            rightTrajectory.segments[i].heading = drivetrain.getTx();
+        }
+
+        drivetrain.followTrajectory(leftTrajectory, rightTrajectory);
     }
 
     @Override
     protected void execute() {
-        drivetrain.updateLimelightTracking();
 
-        if (drivetrain.isLimelightHasValidTarget()) {
-            drivetrain.setArcadeSpeeds(drivetrain.getLimelightDriveCommand(), drivetrain.getLimelightSteerCommand());
-        } else {
-            drivetrain.stopMotion();
-        }
     }
 
     @Override

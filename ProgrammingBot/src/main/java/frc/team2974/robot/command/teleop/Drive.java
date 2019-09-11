@@ -1,6 +1,9 @@
 package frc.team2974.robot.command.teleop;
 
+import edu.wpi.first.networktables.NetworkTableInstance;
 import edu.wpi.first.wpilibj.command.Command;
+import frc.team2974.robot.Config;
+import frc.team2974.robot.OI;
 import frc.team2974.robot.util.EnhancedBoolean;
 
 import static frc.team2974.robot.OI.*;
@@ -40,16 +43,24 @@ public class Drive extends Command {
 
     @Override
     protected void execute() {
-        rightTriggerPress.set(rightJoystick.getTrigger());
+        drivetrain.updateLimelightTracking();
+
+        rightTriggerPress.set(OI.rightJoystick.getTrigger());
 
         if (rightTriggerPress.isRisingEdge()) {
-            drivetrain.setLimelightAutoAlignPipeline();
+            NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline")
+                    .setDouble(Config.Camera.AUTO_ALIGN_PIPELINE);
         } else if (rightTriggerPress.isFallingEdge()) {
-            drivetrain.setLimelightDriverPipeline();
+            NetworkTableInstance.getDefault().getTable("limelight").getEntry("pipeline")
+                    .setDouble(Config.Camera.DRIVER_PIPELINE);
         }
+
+        double leftPower = getLeftThrottle();
+        double rightPower = getRightThrottle();
 
         if (rightTriggerPress.get()) {
             if (drivetrain.isLimelightHasValidTarget()) {
+//        System.out.println("Puppy dogging");
                 drivetrain.setArcadeSpeeds(drivetrain.getLimelightDriveCommand(), drivetrain.getLimelightSteerCommand());
                 isAligning = true;
             } else {
@@ -60,7 +71,7 @@ public class Drive extends Command {
         }
 
         if (!isAligning || !drivetrain.isLimelightHasValidTarget()) {
-            tankDrive();
+            drivetrain.setSpeeds(leftPower, rightPower);
         }
 
         if (shiftUp.get()) {

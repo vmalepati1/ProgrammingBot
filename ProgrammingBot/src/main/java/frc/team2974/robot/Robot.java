@@ -1,14 +1,10 @@
 package frc.team2974.robot;
 
-import edu.wpi.first.networktables.NetworkTable;
-import edu.wpi.first.networktables.NetworkTableInstance;
-import edu.wpi.first.wpilibj.DriverStation;
 import edu.wpi.first.wpilibj.TimedRobot;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.command.Scheduler;
 import edu.wpi.first.wpilibj.smartdashboard.SendableChooser;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
-import frc.team2974.robot.command.AbsolutePoseTracker;
 import frc.team2974.robot.command.auton.StraightTuning;
 import frc.team2974.robot.command.auton.TwoCubeAuton;
 import frc.team2974.robot.command.teleop.Drive;
@@ -32,7 +28,7 @@ public class Robot extends TimedRobot {
 
     public static Drivetrain drivetrain;
     public static OI oi;
-    public static NetworkTable waltonDashboard;
+    // public static NetworkTable waltonDashboard;
     private SendableChooser<Command> autonSelect;
 
     private void initShuffleBoard() {
@@ -60,8 +56,8 @@ public class Robot extends TimedRobot {
         SmartDashboard.putNumber(VISION_ALIGNED_Z_PLUS_MINUS, VISION_ALIGNED_Z_PLUS_MINUS_DEFAULT);
 
         autonSelect = new SendableChooser<>();
-        autonSelect.setDefaultOption("Straight Tuning", new StraightTuning());
-        autonSelect.addOption("Two Cube Auton", new TwoCubeAuton());
+        autonSelect.setDefaultOption("Two Cube Auton", new TwoCubeAuton());
+        autonSelect.addOption("Straight Tuning", new StraightTuning());
         SmartDashboard.putData(AUTON_COMMAND_GROUP, autonSelect);
     }
 
@@ -71,13 +67,13 @@ public class Robot extends TimedRobot {
 
         drivetrain = new Drivetrain();
         oi = new OI();
-        waltonDashboard = NetworkTableInstance.getDefault().getTable("WaltonDashboard");
+        // waltonDashboard = NetworkTableInstance.getDefault().getTable("WaltonDashboard");
 
         drivetrain.resetEncoders();
         drivetrain.shiftDown();
 
-        AbsolutePoseTracker.setStartingPose(new double[]{0, 0, Math.PI / 2});
-        AbsolutePoseTracker.getInstance().start();
+        // AbsolutePoseTracker.setStartingPose(new double[]{0, 0, Math.PI / 2});
+        // AbsolutePoseTracker.getInstance().start();
 
         initShuffleBoard();
     }
@@ -108,6 +104,7 @@ public class Robot extends TimedRobot {
 
     @Override
     public void robotPeriodic() {
+        /*
         waltonDashboard.getEntry("Diagnostics/Battery Voltage").setNumber(DriverStation.getInstance().getBatteryVoltage());
 
         try {
@@ -116,6 +113,10 @@ public class Robot extends TimedRobot {
             e.printStackTrace();
         }
         waltonDashboard.getEntry("Diagnostics/RIO RAM Use").setNumber(getRIORamUse());
+        */
+
+        //drivetrain.updateLimelightTracking();
+        SmartDashboard.putNumber("TX", Math.toDegrees(drivetrain.getTx()));
     }
 
     @Override

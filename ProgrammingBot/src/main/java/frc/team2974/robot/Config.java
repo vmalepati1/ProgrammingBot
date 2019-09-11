@@ -7,8 +7,8 @@ public final class Config {
 
     public static final class Camera {
 
-        public static final int DRIVER_PIPELINE = 3;
-        public static final int AUTO_ALIGN_PIPELINE = 2;
+        public static final int DRIVER_PIPELINE = 0;
+        public static final int AUTO_ALIGN_PIPELINE = 0;
 
     }
 
@@ -54,7 +54,7 @@ public final class Config {
         public static final String PATHFINDER_RIGHT_MOTOR_SPEED = "Pathfinder/Right Motor Speed";
 
         public static final String PATHFINDER_LEFT_FOLLOWER_KP = "Pathfinder/Left Follower KP";
-        public static final String PATHFINDER_LEFT_FOLLOWER_KD = "Pathfinder/Left Follower KP";
+        public static final String PATHFINDER_LEFT_FOLLOWER_KD = "Pathfinder/Left Follower KD";
         public static final String PATHFINDER_RIGHT_FOLLOWER_KP = "Pathfinder/Right Follower KP";
         public static final String PATHFINDER_RIGHT_FOLLOWER_KD = "Pathfinder/Right Follower KD";
 
