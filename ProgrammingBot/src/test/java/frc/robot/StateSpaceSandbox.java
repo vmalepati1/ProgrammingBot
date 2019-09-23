@@ -1,9 +1,8 @@
 package frc.robot;
 
 import lib.control.StateSpace;
-import lib.utils.Timebase;
+import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
-import org.nd4j.linalg.factory.Nd4j;
 
 public class StateSpaceSandbox {
 
@@ -21,7 +20,7 @@ public class StateSpaceSandbox {
 
         double C1 = -Kt / (Kv * R * Math.pow(r, 2));
         double C2 = Gl * Kt / (R * r);
-        double C3 = Math.pow(-Gr, 2) * Kt / (Kv * R * Math.pow(r, 2));
+        double C3 = -Math.pow(Gr, 2) * Kt / (Kv * R * Math.pow(r, 2));
         double C4 = Gr * Kt / (R * r);
 
         double A[][] = {
@@ -45,7 +44,10 @@ public class StateSpaceSandbox {
         };
 
         try {
-            StateSpace ss = new StateSpace(Nd4j.create(A), Nd4j.create(B), Nd4j.create(C), Nd4j.create(D), new Timebase());
+            StateSpace s1 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
+            StateSpace s2 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
+
+            System.out.println(s1.multiply(s2));
         } catch (Exception e) {
             e.printStackTrace();
         }

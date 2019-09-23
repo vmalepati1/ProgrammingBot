@@ -2,21 +2,16 @@ package lib.control;
 
 import lib.utils.DampingData;
 import lib.utils.Timebase;
-import org.apache.commons.math3.complex.Complex;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
 
-import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.DoubleStream;
 
 public abstract class LTI {
 
-    protected long inputs;
-    protected long outputs;
+    protected int inputs;
+    protected int outputs;
     protected Timebase timebase;
 
-    public LTI(long inputs, long outputs, Timebase timebase) {
+    public LTI(int inputs, int outputs, Timebase timebase) {
         this.inputs = inputs;
         this.outputs = outputs;
         this.timebase = timebase;
@@ -42,9 +37,10 @@ public abstract class LTI {
         return inputs == 1 && outputs == 1;
     }
 
-    public abstract List<Complex> pole();
+    public abstract List<Double> pole();
 
     public DampingData damp() {
+        /*
         List<Complex> poles = pole();
 
         List<Complex> splanePoles = new ArrayList<>();
@@ -61,6 +57,42 @@ public abstract class LTI {
         INDArray zeta = Nd4j.create(splanePoles.stream().flatMapToDouble(x -> DoubleStream.of(-x.getReal())).toArray()).div(wn);
 
         return new DampingData(wn, zeta, poles);
+        */
+        return null;
+    }
+
+    public static boolean isSISO(Object sys, boolean strict) throws Exception {
+        if (sys instanceof Number && !strict) {
+            return true;
+        } else if (!(sys instanceof LTI)) {
+            throw new Exception("Object is not an LTI system");
+        }
+
+        return ((LTI) sys).isSISO();
+    }
+
+    public static Double timebase(Object sys) throws Exception {
+        if (sys instanceof Number) {
+            return null;
+        } else if (!(sys instanceof LTI)) {
+            throw new Exception("Timebase not defined");
+        }
+
+        if (((LTI) sys).timebase == null) {
+            return null;
+        }
+
+        return ((LTI) sys).timebase.noTimebase ? 1 : ((LTI) sys).timebase.dt;
+    }
+
+    public static boolean timebaseEqual(LTI sys1, LTI sys2) {
+        if (sys1.timebase == null || sys2.timebase == null) {
+            return true;
+        } else if (sys1.timebase.noTimebase || sys2.timebase.noTimebase) {
+            return sys1.timebase.noTimebase && sys2.timebase.noTimebase;
+        } else {
+            return sys1.timebase.dt == sys2.timebase.dt;
+        }
     }
 
 }

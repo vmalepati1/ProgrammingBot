@@ -49,9 +49,7 @@ repositories {
 dependencies {
     compile wpi.deps.wpilib()
     compile wpi.deps.vendor.java()
-    // https://mvnrepository.com/artifact/org.nd4j/nd4j-api
-    compile group: 'org.nd4j', name: 'nd4j-api', version: '1.0.0-beta5'
-    compile 'org.nd4j:nd4j-native-platform:1.0.0-beta5'
+    compile group: 'org.ejml', name: 'ejml-all', version: '0.38'
     nativeZip wpi.deps.vendor.jni(wpi.platforms.roborio)
     nativeDesktopZip wpi.deps.vendor.jni(wpi.platforms.desktop)
     testCompile 'junit:junit:4.12'

@@ -1,37 +1,39 @@
 package lib.control;
 
-import lib.utils.Nd4jCustomOps;
+import lib.utils.SetOperations;
 import lib.utils.Timebase;
-import org.apache.commons.math3.complex.Complex;
-import org.nd4j.linalg.api.ndarray.INDArray;
-import org.nd4j.linalg.factory.Nd4j;
-import org.nd4j.util.SetUtils;
+import org.ejml.data.Complex_F32;
+import org.ejml.data.Complex_F64;
+import org.ejml.data.ZMatrix;
+import org.ejml.equation.Equation;
+import org.ejml.ops.ComplexMath_F64;
+import org.ejml.simple.SimpleMatrix;
 
-import java.util.Arrays;
+import java.util.Collection;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.stream.Collectors;
 
 public class StateSpace extends LTI {
 
-    private INDArray A;
-    private INDArray B;
-    private INDArray C;
-    private INDArray D;
-    private long states;
+    private SimpleMatrix A;
+    private SimpleMatrix B;
+    private SimpleMatrix C;
+    private SimpleMatrix D;
+    private int states;
 
-    public StateSpace(INDArray A, INDArray B, INDArray C, INDArray D, Timebase timebase) throws Exception {
-        super(preprocessFeedthroughMatrix(D, B, C).shape()[1], D.shape()[0], timebase);
+    public StateSpace(SimpleMatrix A, SimpleMatrix B, SimpleMatrix C, SimpleMatrix D, Timebase timebase) throws Exception {
+        super(preprocessFeedthroughMatrix(D, B, C).numCols(), D.numRows(), timebase);
 
-        A = A.dup();
-        B = B.dup();
-        C = C.dup();
+        A = A.copy();
+        B = B.copy();
+        C = C.copy();
 
-        this.A = convertToSSMatrix(A);
-        this.B = convertToSSMatrix(B);
-        this.C  = convertToSSMatrix(C);
+        this.A = A;
+        this.B = B;
+        this.C  = C;
         this.D = D;
-        this.states = A.shape()[1];
+        this.states = A.numCols();
 
         if (states == 0) {
             A.reshape(0, 0);
@@ -39,115 +41,273 @@ public class StateSpace extends LTI {
             C.reshape(outputs, 0);
         }
 
-        if (states != A.shape()[0]) {
+        if (states != A.numRows()) {
             throw new Exception("A must be square.");
         }
-        if (states != B.shape()[0]) {
+        if (states != B.numRows()) {
             throw new Exception("A and B must have the same number of rows.");
         }
-        if (states != C.shape()[1]) {
+        if (states != C.numCols()) {
             throw new Exception("A and C must have the same number of columns.");
         }
-        if (inputs != B.shape()[1]) {
+        if (inputs != B.numCols()) {
             throw new Exception("B and D must have the same number of columns.");
         }
-        if (outputs != C.shape()[0]) {
+        if (outputs != C.numRows()) {
             throw new Exception("C and D must have the same number of rows.");
         }
 
         removeUselessStates();
     }
 
-    private static INDArray preprocessFeedthroughMatrix(INDArray D, INDArray B, INDArray C) throws Exception {
-        D = D.dup();
+    private static SimpleMatrix preprocessFeedthroughMatrix(SimpleMatrix D, SimpleMatrix B, SimpleMatrix C) throws Exception {
+        D = D.copy();
 
-        if (D.isScalar() && D.getDouble(0) == 0 && B.shape()[1] > 0 & C.shape()[0] > 0) {
-            D.broadcast(C.shape()[0], B.shape()[1]);
+        if (D.numRows() == 1 && D.numCols() == 1 && D.get(0) == 0 && B.numCols() > 0 && C.numRows() > 0) {
+            D = new SimpleMatrix(C.numRows(), B.numCols());
         }
-
-        D = convertToSSMatrix(D);
 
         return D;
     }
 
-    private static INDArray convertToSSMatrix(INDArray data) throws Exception {
-        INDArray arr = data.dup();
-
-        int ndim = arr.rank();
-        long[] shape = arr.shape();
-
-        if (ndim > 2) {
-            throw new Exception("State-space matrix must be 2-dimensional");
-        } else if ((ndim == 2 && Arrays.equals(shape, new long[]{1, 0}))
-                    || (ndim == 1 && shape[0] == 0)) {
-            shape = new long[]{0, 0};
-        } else if (ndim == 1) {
-            shape = new long[]{1, shape[0]};
-        } else if (ndim == 0) {
-            shape = new long[]{1, 1};
-        }
-
-        return arr.reshape(shape);
-    }
-
-    private boolean[] matrixAny(INDArray matrix, int axis) {
-        INDArray a = matrix.dup();
+    private Set<Integer> getAxisZeroIndices(SimpleMatrix matrix, int axis) {
+        SimpleMatrix a = matrix.copy();
 
         if (axis == 0) {
             a = a.transpose();
         }
 
-        boolean[] result = new boolean[a.rows()];
+        Set<Integer> result = new HashSet<>();
 
-        for (int i = 0; i < a.rows(); i++) {
-            INDArray row = a.getRow(i);
+        int rowNum = 0;
 
-            result[i] = !row.any();
+        for (int i = 0; i < a.getNumElements(); i += a.numCols()) {
+            boolean any = false;
+
+            for (int j = 0; j < a.numCols(); j++) {
+                if (a.get(i + j) != 0) {
+                    any = true;
+                    break;
+                }
+            }
+
+            if (!any) {
+                result.add(rowNum);
+            }
+
+            rowNum++;
         }
 
         return result;
     }
 
-    private void removeUselessStates() {
-        Set<Integer> ax1A =
-                Arrays.stream(Nd4j.where(Nd4j.create(matrixAny(A, 1)), null, null)[0].toIntVector())
-                        .boxed().collect(Collectors.toSet());
+    private SimpleMatrix deleteOnAxis(SimpleMatrix matrix, Collection<Integer> indices, int axis) {
+        SimpleMatrix a = matrix.copy();
 
-        Set<Integer> ax1B =
-                Arrays.stream(Nd4j.where(Nd4j.create(matrixAny(B, 1)), null, null)[0].toIntVector())
-                        .boxed().collect(Collectors.toSet());
-
-        Set<Integer> ax0A =
-                Arrays.stream(Nd4j.where(Nd4j.create(matrixAny(A, 0)), null, null)[0].toIntVector())
-                        .boxed().collect(Collectors.toSet());
-
-        Set<Integer> ax0C =
-                Arrays.stream(Nd4j.where(Nd4j.create(matrixAny(C, 0)), null, null)[0].toIntVector())
-                        .boxed().collect(Collectors.toSet());
-
-        Set<Integer> useless1 = SetUtils.intersection(ax1A, ax1B);
-        Set<Integer> useless2 = SetUtils.intersection(ax0A, ax0C);
-        Set<Integer> useless = SetUtils.union(useless1, useless2);
-
-        for (int i : useless) {
-            A = Nd4jCustomOps.delete(0, A, i);
-            A = Nd4jCustomOps.delete(1, A, i);
-            B = Nd4jCustomOps.delete(0, B, i);
-            C = Nd4jCustomOps.delete(1, C, i);
+        if (axis == 1) {
+            a = a.transpose();
         }
 
-        states = A.shape()[0];
-        inputs = B.shape()[1];
-        outputs = C.shape()[0];
+        SimpleMatrix result = new SimpleMatrix(a.numRows() - 1, a.numCols());
 
-        System.out.println(A.toString());
-        System.out.println(B.toString());
-        System.out.println(C.toString());
-        System.out.println(D.toString());
+        for (Integer index : indices) {
+            if (index == 0) {
+                result = a.extractMatrix(1, a.numRows(), 0, a.numCols());
+            } else if (index == a.numRows() - 1) {
+                result = a.extractMatrix(0, a.numRows() - 1, 0, a.numCols());
+            } else {
+                SimpleMatrix partitionUpper = a.extractMatrix(0, index, 0, a.numCols());
+                SimpleMatrix partitionLower = a.extractMatrix(index + 1, a.numRows(), 0, a.numCols());
+                result = partitionUpper.concatRows(partitionLower);
+            }
+        }
+
+        return axis == 1 ? result.transpose() : result;
+    }
+
+    private void removeUselessStates() {
+        Set<Integer> ax1A = getAxisZeroIndices(A, 1);
+        Set<Integer> ax1B = getAxisZeroIndices(B, 1);
+        Set<Integer> ax0A = getAxisZeroIndices(A, 0);
+        Set<Integer> ax0C = getAxisZeroIndices(C, 0);
+
+        Set<Integer> useless1 = SetOperations.intersection(ax1A, ax1B);
+        Set<Integer> useless2 = SetOperations.intersection(ax0A, ax0C);
+        Set<Integer> useless = SetOperations.union(useless1, useless2);
+
+        if (!useless.isEmpty()) {
+            A = deleteOnAxis(A, useless, 0);
+            A = deleteOnAxis(A, useless, 1);
+            B = deleteOnAxis(B, useless, 0);
+            C = deleteOnAxis(C, useless, 1);
+        }
+
+        states = A.numRows();
+        inputs = B.numCols();
+        outputs = C.numRows();
+    }
+
+    public StateSpace negative() throws Exception {
+        return new StateSpace(A, B, C.negative(), D.negative(), timebase);
+    }
+
+    public StateSpace add(Object object) throws Exception {
+        SimpleMatrix A = this.A.copy();
+        SimpleMatrix B = this.B.copy();
+        SimpleMatrix C = this.C.copy();
+        SimpleMatrix D = this.D.copy();
+        Timebase timebase;
+
+        if (object instanceof Number) {
+            Equation eq = new Equation();
+            eq.alias(D, "D", ((Number) object).doubleValue(), "other");
+            eq.process("D = D + other");
+
+            timebase = this.timebase == null ? null : this.timebase.copy();
+        } else {
+            StateSpace other = (StateSpace) object;
+
+            if (inputs != other.inputs || outputs != other.outputs) {
+                throw new Exception("Systems have different shapes.");
+            }
+
+            if (this.timebase == null && other.timebase != null) {
+                timebase = other.timebase.copy();
+            } else if ((other.timebase == null && this.timebase != null) || timebaseEqual(this, other)) {
+                timebase = this.timebase == null ? null : this.timebase.copy();
+            } else {
+                throw new Exception("Systems have different sampling times");
+            }
+
+            A = this.A.concatColumns(new SimpleMatrix(this.A.numRows(), other.A.numCols()))
+                    .concatRows(new SimpleMatrix(other.A.numRows(), this.A.numCols()).concatColumns(other.A));
+            B = this.B.concatRows(other.B);
+            C = this.C.concatColumns(other.C);
+
+            Equation eq = new Equation();
+            eq.alias(D, "A", this.D, "B", other.D, "C");
+            eq.process("A = B + C");
+        }
+
+        return new StateSpace(A, B, C, D, timebase);
+    }
+
+    public StateSpace subtract(Object other) throws Exception {
+        if (other instanceof Number) {
+            return add(-((Number) other).doubleValue());
+        } else {
+            return add(((StateSpace) other).negative());
+        }
+    }
+
+    public StateSpace multiply(Object object) throws Exception {
+        SimpleMatrix A = this.A.copy();
+        SimpleMatrix B = this.B.copy();
+        SimpleMatrix C = this.C.copy();
+        SimpleMatrix D = this.D.copy();
+        Timebase timebase;
+
+        if (object instanceof Number) {
+            Equation eq = new Equation();
+            eq.alias(C, "C", D, "D", ((Number) object).doubleValue(), "other");
+            eq.process("C = C * other");
+            eq.process("D = D * other");
+
+            timebase = this.timebase == null ? null : this.timebase.copy();
+        } else {
+            StateSpace other = (StateSpace) object;
+
+            if (inputs != other.outputs) {
+                throw new Exception(
+                        String.format("C = A * B: A has %d column(s) (input(s)), but B has %d row(s)\n(output(s)).",
+                                inputs, outputs));
+            }
+
+            if (this.timebase == null && other.timebase != null) {
+                timebase = other.timebase.copy();
+            } else if ((other.timebase == null && this.timebase != null) || LTI.timebaseEqual(this, other)) {
+                timebase = this.timebase == null ? null : this.timebase.copy();
+            } else {
+                throw new Exception("Systems have different sampling times");
+            }
+
+            A = other.A.concatColumns(new SimpleMatrix(other.A.numRows(), this.A.numCols()))
+                    .concatRows(this.B.mult(this.C).concatColumns(this.A));
+            B = other.B.concatRows(this.B.mult(other.D));
+            C = this.D.mult(other.C).concatColumns(this.C);
+            D = this.D.mult(other.D);
+        }
+
+        return new StateSpace(A, B, C, D, timebase);
+    }
+
+    public StateSpace rightMultiply(Object object) throws Exception {
+        if (object instanceof Number) {
+            SimpleMatrix A = this.A.copy();
+            SimpleMatrix C = this.C.copy();
+            SimpleMatrix B = this.B.copy();
+            SimpleMatrix D = this.D.copy();
+
+            Equation eq = new Equation();
+            eq.alias(B, "B", D, "D", ((Number) object).doubleValue(), "other");
+            eq.process("B = B * other");
+            eq.process("D = D * other");
+
+            return new StateSpace(A, B, C, D, timebase);
+        }
+
+        if (object instanceof StateSpace) {
+            return ((StateSpace) object).multiply(this);
+        }
+
+        if (object instanceof SimpleMatrix) {
+            SimpleMatrix X = (SimpleMatrix) object;
+            SimpleMatrix C = X.mult(this.C);
+            SimpleMatrix D = X.mult(this.D);
+
+            return new StateSpace(A, B, C, D, timebase);
+        }
+
+        throw new Exception("can't interconnect system");
+    }
+
+    public StateSpace divide(Object other) throws Exception {
+        throw new Exception("StateSpace.divide is not implemented yet.");
+    }
+
+    public StateSpace rightDivide(Object other) throws Exception {
+        throw new Exception("StateSpace.rightDivide is not implemented yet.");
+    }
+
+    public SimpleMatrix evalFr(double omega) throws Exception {
+        Complex_F64 s;
+
+        if (isDTime(true)) {
+            Double dt = timebase(this);
+            assert(dt != null);
+            s = new Complex_F64(Math.cos(omega * dt), Math.sin(omega * dt));
+            if (omega * dt > Math.PI) {
+                System.err.println("evalFr: frequency evaluation above Nyquist frequency");
+            }
+        } else {
+            s = new Complex_F64(0, omega);
+        }
+
+        // ZMatrix
+        return horner(s);
     }
 
     @Override
-    public List<Complex> pole() {
+    public String toString() {
+        return "A = {" + A + "}\n\n"
+                + "B = {" + B + "}\n\n"
+                + "C = {" + C + "}\n\n"
+                + "D = {" + D + "}\n\n"
+                + (timebase == null ? "" : timebase);
+    }
+
+    @Override
+    public List<Double> pole() {
         return null;
     }
 }
