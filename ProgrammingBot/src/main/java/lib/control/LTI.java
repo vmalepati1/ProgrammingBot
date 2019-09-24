@@ -18,19 +18,19 @@ public abstract class LTI {
     }
 
     public boolean isDTime(boolean strict) {
-        if (timebase.noTimebase) {
+        if (timebase == null) {
             return !strict;
         }
 
-        return timebase.dt > 0;
+        return timebase.noTimebase || timebase.dt > 0;
     }
 
     public boolean isCTime(boolean strict) {
-        if (timebase.noTimebase) {
+        if (timebase == null) {
             return !strict;
         }
 
-        return timebase.dt == 0;
+        return !timebase.noTimebase && timebase.dt == 0;
     }
 
     public boolean isSISO() {
@@ -93,6 +93,30 @@ public abstract class LTI {
         } else {
             return sys1.timebase.dt == sys2.timebase.dt;
         }
+    }
+
+    public static boolean isDTime(Object sys, boolean strict) {
+        if (sys instanceof Number) {
+            return !strict;
+        }
+
+        if (sys instanceof LTI) {
+            return ((LTI) sys).isDTime(strict);
+        }
+
+        return false;
+    }
+
+    public static boolean isCTime(Object sys, boolean strict) {
+        if (sys instanceof Number) {
+            return !strict;
+        }
+
+        if (sys instanceof LTI) {
+            return ((LTI) sys).isCTime(strict);
+        }
+
+        return false;
     }
 
 }

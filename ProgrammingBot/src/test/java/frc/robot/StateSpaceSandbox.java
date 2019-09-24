@@ -47,7 +47,7 @@ public class StateSpaceSandbox {
             StateSpace s1 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
             StateSpace s2 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
 
-            System.out.println(s1.multiply(s2));
+            s1.evalFr(2).print();
         } catch (Exception e) {
             e.printStackTrace();
         }

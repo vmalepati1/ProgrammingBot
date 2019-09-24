@@ -2,17 +2,20 @@ package lib.control;
 
 import lib.utils.SetOperations;
 import lib.utils.Timebase;
-import org.ejml.data.Complex_F32;
 import org.ejml.data.Complex_F64;
-import org.ejml.data.ZMatrix;
+import org.ejml.data.ZMatrixRMaj;
+import org.ejml.dense.row.CommonOps_ZDRM;
+import org.ejml.dense.row.decompose.lu.LUDecompositionAlt_ZDRM;
+import org.ejml.dense.row.linsol.lu.LinearSolverLu_ZDRM;
 import org.ejml.equation.Equation;
-import org.ejml.ops.ComplexMath_F64;
 import org.ejml.simple.SimpleMatrix;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
+import static org.ejml.dense.row.CommonOps_ZDRM.*;
 
 public class StateSpace extends LTI {
 
@@ -279,10 +282,10 @@ public class StateSpace extends LTI {
         throw new Exception("StateSpace.rightDivide is not implemented yet.");
     }
 
-    public SimpleMatrix evalFr(double omega) throws Exception {
+    public ZMatrixRMaj evalFr(double omega) throws Exception {
         Complex_F64 s;
 
-        if (isDTime(true)) {
+        if (LTI.isDTime(this, true)) {
             Double dt = timebase(this);
             assert(dt != null);
             s = new Complex_F64(Math.cos(omega * dt), Math.sin(omega * dt));
@@ -293,8 +296,45 @@ public class StateSpace extends LTI {
             s = new Complex_F64(0, omega);
         }
 
-        // ZMatrix
         return horner(s);
+    }
+
+    private ZMatrixRMaj convertSimpleMatToZMat(SimpleMatrix mat) {
+        ZMatrixRMaj result = new ZMatrixRMaj(mat.numRows(), mat.numCols());
+
+        for (int y = 0; y < result.numRows; y++) {
+            for (int x = 0; x < result.numCols; x++) {
+                result.setReal(y, x, mat.get(y, x));
+            }
+        }
+
+        return result;
+    }
+
+    private ZMatrixRMaj horner(Complex_F64 s) throws Exception {
+        ZMatrixRMaj resp = new ZMatrixRMaj(D.numRows(), D.numCols());
+        ZMatrixRMaj A = convertSimpleMatToZMat(this.A);
+        ZMatrixRMaj B = convertSimpleMatToZMat(this.B);
+        ZMatrixRMaj C = convertSimpleMatToZMat(this.C);
+        ZMatrixRMaj D = convertSimpleMatToZMat(this.D);
+
+        ZMatrixRMaj eyeStates = identity(states);
+        scale(s.real, s.imaginary, eyeStates);
+
+        ZMatrixRMaj coef = A.copy();
+        CommonOps_ZDRM.subtract(eyeStates, A, coef);
+
+        ZMatrixRMaj solution = B.copy();
+        LinearSolverLu_ZDRM solver = new LinearSolverLu_ZDRM(new LUDecompositionAlt_ZDRM());
+        solver.setA(coef);
+        solver.solve(B, solution);
+
+        ZMatrixRMaj dot = new ZMatrixRMaj(C.numRows, solution.numCols);
+
+        mult(C, solution, dot);
+        CommonOps_ZDRM.add(dot, D, resp);
+
+        return resp;
     }
 
     @Override
