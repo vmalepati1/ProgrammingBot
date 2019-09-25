@@ -1,7 +1,9 @@
 package lib.control;
 
+import lib.utils.FrequencyResponseData;
 import lib.utils.SetOperations;
 import lib.utils.Timebase;
+import org.ejml.data.ComplexPolar_F64;
 import org.ejml.data.Complex_F64;
 import org.ejml.data.ZMatrixRMaj;
 import org.ejml.dense.row.CommonOps_ZDRM;
@@ -10,10 +12,7 @@ import org.ejml.dense.row.linsol.lu.LinearSolverLu_ZDRM;
 import org.ejml.equation.Equation;
 import org.ejml.simple.SimpleMatrix;
 
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 import static org.ejml.dense.row.CommonOps_ZDRM.*;
 
@@ -228,7 +227,7 @@ public class StateSpace extends LTI {
 
             if (this.timebase == null && other.timebase != null) {
                 timebase = other.timebase.copy();
-            } else if ((other.timebase == null && this.timebase != null) || LTI.timebaseEqual(this, other)) {
+            } else if ((other.timebase == null && this.timebase != null) || timebaseEqual(this, other)) {
                 timebase = this.timebase == null ? null : this.timebase.copy();
             } else {
                 throw new Exception("Systems have different sampling times");
@@ -285,7 +284,7 @@ public class StateSpace extends LTI {
     public ZMatrixRMaj evalFr(double omega) throws Exception {
         Complex_F64 s;
 
-        if (LTI.isDTime(this, true)) {
+        if (isDTime(this, true)) {
             Double dt = timebase(this);
             assert(dt != null);
             s = new Complex_F64(Math.cos(omega * dt), Math.sin(omega * dt));
@@ -335,6 +334,53 @@ public class StateSpace extends LTI {
         CommonOps_ZDRM.add(dot, D, resp);
 
         return resp;
+    }
+
+    public FrequencyResponseData freqResp(List<Double> omega) throws Exception {
+        FrequencyResponseData result = new FrequencyResponseData();
+
+        int numFreqs = omega.size();
+
+        result.mag = new double[outputs][inputs][numFreqs];
+        result.phase = new double[outputs][inputs][numFreqs];
+        result.omega = new ArrayList<>(omega);
+
+        Collections.sort(result.omega);
+
+        List<Complex_F64> cmplxFrqs = new ArrayList<>();
+
+        if (isDTime(this, true)) {
+            Double dt = timebase(this);
+            assert(dt != null);
+            for (double w : result.omega) {
+                if (Math.abs(w) * dt > Math.PI) {
+                    System.err.println("freqResp: frequency evaluation above Nyquist frequency");
+                }
+                cmplxFrqs.add(new Complex_F64(Math.cos(w * dt), Math.sin(w * dt)));
+            }
+        } else {
+            for (double w : result.omega) {
+                cmplxFrqs.add(new Complex_F64(0, w));
+            }
+        }
+
+        for (int kk = 0; kk < cmplxFrqs.size(); kk++) {
+            Complex_F64 cmplxFreqsKK = cmplxFrqs.get(kk);
+
+            ZMatrixRMaj fr = horner(cmplxFreqsKK);
+
+            for (int y = 0; y < fr.numRows; y++) {
+                for (int x = 0; x < fr.numCols; x++) {
+                    Complex_F64 z = new Complex_F64();
+                    fr.get(y, x, z);
+
+                    result.mag[y][x][kk] = Math.sqrt(Math.pow(z.real, 2) + Math.pow(z.imaginary, 2));
+                    result.phase[y][x][kk] = new ComplexPolar_F64(z).theta;
+                }
+            }
+        }
+
+        return result;
     }
 
     @Override

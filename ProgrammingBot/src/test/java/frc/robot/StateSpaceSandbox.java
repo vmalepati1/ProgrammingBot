@@ -1,8 +1,11 @@
 package frc.robot;
 
 import lib.control.StateSpace;
+import lib.utils.FrequencyResponseData;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
+
+import java.util.Arrays;
 
 public class StateSpaceSandbox {
 
@@ -47,7 +50,9 @@ public class StateSpaceSandbox {
             StateSpace s1 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
             StateSpace s2 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
 
-            s1.evalFr(2).print();
+            FrequencyResponseData resp = s1.freqResp(Arrays.asList(1.5, 0.5, 1.0));
+
+            System.out.println(resp.mag[0][1][0]);
         } catch (Exception e) {
             e.printStackTrace();
         }
