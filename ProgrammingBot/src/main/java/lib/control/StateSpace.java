@@ -383,6 +383,76 @@ public class StateSpace extends LTI {
         return result;
     }
 
+    public StateSpace sample(double ts, String method, Double alpha) throws Exception {
+        if(!isCTime(false)) {
+            throw new Exception("System must be continuous time system");
+        }
+
+        return contToDiscrete(A, B, C, D, ts, method, alpha);
+    }
+
+    private StateSpace contToDiscrete(SimpleMatrix a, SimpleMatrix b, SimpleMatrix c, SimpleMatrix d,
+                                      double dt, String method, Double alpha) throws Exception {
+        SimpleMatrix ad;
+        SimpleMatrix bd;
+        SimpleMatrix cd;
+        SimpleMatrix dd;
+
+        if (method.equals("gbt")) {
+            if (alpha == null) {
+                throw new Exception("Alpha parameter must be specified for the " +
+                        "generalized bilinear transform (gbt) method");
+            } else if (alpha < 0 || alpha > 1) {
+                throw new Exception("Alpha parameter must be within the interval [" +
+                        "0,1] for the gbt method");
+            }
+        }
+
+        if (method.equals("gbt")) {
+            SimpleMatrix ima = SimpleMatrix.identity(A.numRows()).minus(a.scale(alpha * dt));
+            ad = ima.solve(SimpleMatrix.identity(a.numRows()).plus(a.scale((1.0 - alpha) * dt)));
+            bd = ima.solve(b.scale(dt));
+
+            cd = ima.transpose().solve(c.transpose());
+            cd = cd.transpose();
+            dd = d.plus(c.mult(bd).scale(alpha));
+        } else if (method.equals("bilinear") || method.equals("tustin")) {
+            return contToDiscrete(a, b, c, d, dt, "gbt", 0.5);
+        } else if (method.equals("euler") || method.equals("forward_diff")) {
+            return contToDiscrete(a, b, c, d, dt, "gbt", 0.0);
+        } else if (method.equals("backward_diff")) {
+            return contToDiscrete(a, b, c, d, dt, "gbt", 1.0);
+        } else if (method.equals("zoh")) {
+            ad = new SimpleMatrix(a.numRows(), a.numCols());
+            bd = new SimpleMatrix(a.numRows(), a.numCols());
+
+            SimpleMatrix emUpper = a.concatColumns(b);
+            SimpleMatrix emLower = new SimpleMatrix(b.numCols(), a.numRows()).concatColumns(new SimpleMatrix(b.numCols(), b.numCols()));
+            SimpleMatrix em = emUpper.concatRows(emLower).scale(dt);
+
+            // Taylor Series
+            int n = em.numRows();
+            SimpleMatrix eA = SimpleMatrix.identity(n);
+            SimpleMatrix trm = SimpleMatrix.identity(n);
+            for (int k = 1; k < 20; k++) {
+                trm = trm.mult(em).scale(1.0 / k);
+                eA = eA.plus(trm);
+            }
+
+            Equation eq = new Equation();
+            eq.alias(ad, "ad", bd, "bd", a.numRows(), "arow", a.numCols(), "acol", eA, "eA");
+            eq.process("eA = eA(0:(arow-1), :)");
+            eq.process("ad = eA(:, 0:(acol-1))");
+            eq.process("bd = eA(:, acol:)");
+            cd = c.copy();
+            dd = d.copy();
+        } else {
+            throw new Exception(String.format("Unknown transformation method '%s'", method));
+        }
+
+        return new StateSpace(ad, bd, cd, dd, new Timebase(dt));
+    }
+
     @Override
     public String toString() {
         return "A = {" + A + "}\n\n"

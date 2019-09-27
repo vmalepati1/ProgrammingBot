@@ -1,7 +1,7 @@
 package frc.robot;
 
 import lib.control.StateSpace;
-import org.ejml.data.Complex_F64;
+import lib.math.Special;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
 
@@ -59,9 +59,10 @@ public class StateSpaceSandbox {
         try {
             StateSpace ss = new StateSpace(A, B, C, D, null);
 
-            for (Complex_F64 z : ss.zero()) {
-                System.out.println(z);
-            }
+            StateSpace s2 = ss.sample(0.5, "zoh", 0.5);
+
+            System.out.println(Special.Epslon(4.0));
+            System.out.println(s2);
         } catch (Exception e) {
             e.printStackTrace();
         }
