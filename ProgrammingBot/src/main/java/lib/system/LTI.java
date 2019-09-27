@@ -1,4 +1,4 @@
-package lib.control;
+package lib.system;
 
 import lib.utils.DampingData;
 import lib.utils.Timebase;

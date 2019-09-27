@@ -139,7 +139,7 @@ public interface IPathfinderDrivetrain {
     double[] getEncoderDistances();
 
     /**
-     * @param controlPoints: control points of Hermite cubic spline to follow
+     * @param controlPoints: system points of Hermite cubic spline to follow
      */
     void followPathSimple(Waypoint[] controlPoints);
 

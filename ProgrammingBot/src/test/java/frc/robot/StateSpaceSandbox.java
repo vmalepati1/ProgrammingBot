@@ -1,6 +1,6 @@
 package frc.robot;
 
-import lib.control.StateSpace;
+import lib.system.StateSpace;
 import lib.math.Special;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
@@ -56,12 +56,16 @@ public class StateSpaceSandbox {
         SimpleMatrix C = new SimpleMatrix(CD);
         SimpleMatrix D = new SimpleMatrix(DD);
 
+        for (double s : A.svd().getSingularValues()) {
+            System.out.println(s);
+        }
+
         try {
             StateSpace ss = new StateSpace(A, B, C, D, null);
 
             StateSpace s2 = ss.sample(0.5, "zoh", 0.5);
 
-            System.out.println(Special.Epslon(4.0));
+            System.out.println(Special.epslon(4.0));
             System.out.println(s2);
         } catch (Exception e) {
             e.printStackTrace();

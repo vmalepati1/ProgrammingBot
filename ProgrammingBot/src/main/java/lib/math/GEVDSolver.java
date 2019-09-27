@@ -3,7 +3,7 @@ package lib.math;
 import org.ejml.data.Complex_F64;
 
 import static lib.math.Special.DOUBLE_EPSILON;
-import static lib.math.Special.Epslon;
+import static lib.math.Special.epslon;
 
 public class GEVDSolver {
 
@@ -337,7 +337,7 @@ public class GEVDSolver {
         if (ep == 0.0)
         {
             // Use round-off level if eps1 is zero
-            ep = Epslon(1.0);
+            ep = epslon(1.0);
         }
 
         epsa = ep * anorm;

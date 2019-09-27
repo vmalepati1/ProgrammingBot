@@ -4,7 +4,7 @@ public class Special {
 
     public static double DOUBLE_EPSILON = 1.11022302462515654042e-16;
 
-    public static double Epslon(double x)
+    public static double epslon(double x)
     {
         double a, b, c, eps;
 
@@ -24,6 +24,10 @@ public class Special {
         }
 
         return eps * Math.abs(x);
+    }
+
+    public static double clip(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
 }

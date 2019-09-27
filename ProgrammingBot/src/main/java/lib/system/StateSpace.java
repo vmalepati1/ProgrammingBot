@@ -1,4 +1,4 @@
-package lib.control;
+package lib.system;
 
 import lib.math.GEVDSolver;
 import lib.utils.FrequencyResponseData;
@@ -19,11 +19,11 @@ import static org.ejml.dense.row.CommonOps_ZDRM.*;
 
 public class StateSpace extends LTI {
 
-    private SimpleMatrix A;
-    private SimpleMatrix B;
-    private SimpleMatrix C;
-    private SimpleMatrix D;
-    private int states;
+    public SimpleMatrix A;
+    public SimpleMatrix B;
+    public SimpleMatrix C;
+    public SimpleMatrix D;
+    public int states;
 
     public StateSpace(SimpleMatrix A, SimpleMatrix B, SimpleMatrix C, SimpleMatrix D, Timebase timebase) throws Exception {
         super(preprocessFeedthroughMatrix(D, B, C).numCols(), D.numRows(), timebase);
@@ -287,7 +287,7 @@ public class StateSpace extends LTI {
             assert(dt != null);
             s = new Complex_F64(Math.cos(omega * dt), Math.sin(omega * dt));
             if (omega * dt > Math.PI) {
-                System.err.println("evalFr: frequency evaluation above Nyquist frequency");
+                java.lang.System.err.println("evalFr: frequency evaluation above Nyquist frequency");
             }
         } else {
             s = new Complex_F64(0, omega);
@@ -352,7 +352,7 @@ public class StateSpace extends LTI {
             assert(dt != null);
             for (double w : result.omega) {
                 if (Math.abs(w) * dt > Math.PI) {
-                    System.err.println("freqResp: frequency evaluation above Nyquist frequency");
+                    java.lang.System.err.println("freqResp: frequency evaluation above Nyquist frequency");
                 }
                 cmplxFrqs.add(new Complex_F64(Math.cos(w * dt), Math.sin(w * dt)));
             }
