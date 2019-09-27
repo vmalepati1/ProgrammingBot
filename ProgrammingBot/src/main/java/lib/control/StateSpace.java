@@ -1,5 +1,6 @@
 package lib.control;
 
+import lib.math.GEVDSolver;
 import lib.utils.FrequencyResponseData;
 import lib.utils.SetOperations;
 import lib.utils.Timebase;
@@ -185,10 +186,7 @@ public class StateSpace extends LTI {
                     .concatRows(new SimpleMatrix(other.A.numRows(), this.A.numCols()).concatColumns(other.A));
             B = this.B.concatRows(other.B);
             C = this.C.concatColumns(other.C);
-
-            Equation eq = new Equation();
-            eq.alias(D, "A", this.D, "B", other.D, "C");
-            eq.process("A = B + C");
+            D = this.D.plus(other.D);
         }
 
         return new StateSpace(A, B, C, D, timebase);
@@ -374,8 +372,10 @@ public class StateSpace extends LTI {
                     Complex_F64 z = new Complex_F64();
                     fr.get(y, x, z);
 
-                    result.mag[y][x][kk] = Math.sqrt(Math.pow(z.real, 2) + Math.pow(z.imaginary, 2));
-                    result.phase[y][x][kk] = new ComplexPolar_F64(z).theta;
+                    ComplexPolar_F64 zp = new ComplexPolar_F64(z);
+
+                    result.mag[y][x][kk] = zp.r;
+                    result.phase[y][x][kk] = zp.theta;
                 }
             }
         }
@@ -393,7 +393,44 @@ public class StateSpace extends LTI {
     }
 
     @Override
-    public List<Double> pole() {
-        return null;
+    public List<Complex_F64> pole() {
+        return new ArrayList<>(A.eig().getEigenvalues());
+    }
+
+    @Override
+    public List<Complex_F64> zero() throws Exception {
+        if (states == 0) {
+            return new ArrayList<>();
+        }
+
+        if (C.numRows() != D.numCols()) {
+            throw new Exception("StateSpace.zero only supports " +
+                    "systems with the same number of inputs as outputs.");
+        }
+
+        SimpleMatrix L = A.concatColumns(B).concatRows(C.concatColumns(D));
+
+        int numRows = L.numRows();
+        int numCols = L.numCols();
+
+        double[][] LD = new double[numRows][numCols];
+        double[][] MD = new double[numRows][numCols];
+
+        for (int y = 0; y < numRows; y++) {
+            for (int x = 0; x < numCols; x++) {
+                LD[y][x] = L.get(y, x);
+                if (x == y && y < C.numRows() && x < B.numCols()) MD[x][y] = 1;
+            }
+        }
+
+        List<Complex_F64> result = new ArrayList<>();
+
+        for (Complex_F64 z : new GEVDSolver(LD, MD).getEigenvalues()) {
+            if (!Double.isInfinite(z.real) && !Double.isInfinite(z.imaginary)) {
+                result.add(z);
+            }
+        }
+
+        return result;
     }
 }

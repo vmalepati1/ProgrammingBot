@@ -1,11 +1,9 @@
 package frc.robot;
 
 import lib.control.StateSpace;
-import lib.utils.FrequencyResponseData;
+import org.ejml.data.Complex_F64;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
-
-import java.util.Arrays;
 
 public class StateSpaceSandbox {
 
@@ -26,33 +24,44 @@ public class StateSpaceSandbox {
         double C3 = -Math.pow(Gr, 2) * Kt / (Kv * R * Math.pow(r, 2));
         double C4 = Gr * Kt / (R * r);
 
-        double A[][] = {
+        double AD[][] = {
                 {(1 / m + Math.pow(rb, 2) / J) * C1, (1 / m - Math.pow(rb, 2) / J) * C3},
                 {(1 / m - Math.pow(rb, 2) / J) * C1, (1 / m + Math.pow(rb, 2) / J) * C3}
         };
 
-        double B[][] = {
+        double BD[][] = {
                 {(1 / m + Math.pow(rb, 2) / J) * C2, (1 / m - Math.pow(rb, 2) / J) * C4},
                 {(1 / m - Math.pow(rb, 2) / J) * C2, (1 / m + Math.pow(rb, 2) / J) * C4}
         };
 
-        double C[][] = {
+        double CD[][] = {
                 {1, 0},
                 {0, 1}
         };
 
-        double D[][] = {
+        double DD[][] = {
                 {0, 0},
                 {0, 0}
         };
 
+        double[][] MD = {
+                {1, 0, 0, 0},
+                {0, 1, 0, 0},
+                {0, 0, 0, 0},
+                {0, 0, 0, 0},
+        };
+
+        SimpleMatrix A = new SimpleMatrix(AD);
+        SimpleMatrix B = new SimpleMatrix(BD);
+        SimpleMatrix C = new SimpleMatrix(CD);
+        SimpleMatrix D = new SimpleMatrix(DD);
+
         try {
-            StateSpace s1 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
-            StateSpace s2 = new StateSpace(new SimpleMatrix(A), new SimpleMatrix(B), new SimpleMatrix(C), new SimpleMatrix(D), null);
+            StateSpace ss = new StateSpace(A, B, C, D, null);
 
-            FrequencyResponseData resp = s1.freqResp(Arrays.asList(1.5, 0.5, 1.0));
-
-            System.out.println(resp.mag[0][1][0]);
+            for (Complex_F64 z : ss.zero()) {
+                System.out.println(z);
+            }
         } catch (Exception e) {
             e.printStackTrace();
         }

@@ -2,6 +2,7 @@ package lib.control;
 
 import lib.utils.DampingData;
 import lib.utils.Timebase;
+import org.ejml.data.Complex_F64;
 
 import java.util.List;
 
@@ -37,7 +38,9 @@ public abstract class LTI {
         return inputs == 1 && outputs == 1;
     }
 
-    public abstract List<Double> pole();
+    public abstract List<Complex_F64> pole();
+
+    public abstract List<Complex_F64> zero() throws Exception;
 
     public DampingData damp() {
         /*
