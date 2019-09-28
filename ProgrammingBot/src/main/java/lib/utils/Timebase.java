@@ -1,5 +1,8 @@
 package lib.utils;
 
+/**
+ * @author Vikas Malepati
+ */
 public class Timebase {
 
     public boolean noTimebase;

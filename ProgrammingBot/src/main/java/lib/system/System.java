@@ -1,21 +1,24 @@
 package lib.system;
 
-import edu.wpi.first.wpilibj.command.Subsystem;
 import org.ejml.data.Complex_F64;
 import org.ejml.simple.SimpleMatrix;
 
 import static lib.math.Special.clip;
 
-public abstract class System extends Subsystem {
+/**
+ * @author Vikas Malepati
+ */
+// TODO: Remove comment below!
+public abstract class System /* extends Subsystem */ {
 
     private NonlinearFunction f;
     private StateSpace sysc;
     private double dt;
     private StateSpace sysd;
 
-    private SimpleMatrix x;
-    private SimpleMatrix u;
-    private SimpleMatrix y;
+    public SimpleMatrix x;
+    public SimpleMatrix u;
+    public SimpleMatrix y;
 
     private SimpleMatrix r;
 
@@ -65,10 +68,10 @@ public abstract class System extends Subsystem {
         designControllerObserver();
     }
 
-    public void update() {
+    public void update(SimpleMatrix nextR) {
         updatePlant();
         correctObserver();
-        updateController(null);
+        updateController(nextR);
         predictObserver();
     }
 
@@ -101,18 +104,18 @@ public abstract class System extends Subsystem {
     }
 
     protected void updateController(SimpleMatrix nextR) {
-        u = K.mult(r.minus(xHat));
+        SimpleMatrix u1 = K.mult(r.minus(xHat));
         SimpleMatrix uff;
 
         if (nextR != null) {
             if (f != null) {
-                SimpleMatrix rDot = nextR.minus(r).scale(1/dt);
+                SimpleMatrix rDot = nextR.minus(r).scale(1.0/dt);
                 uff = Kff.mult(rDot.minus(
                         f.findStateDerivative(r, new SimpleMatrix(u.numRows(), u.numCols()))));
             } else {
                 uff = Kff.mult(nextR.minus(sysd.A.mult(r)));
-                r = nextR;
             }
+            r = nextR.copy();
         } else {
             if (f != null) {
                 uff = Kff.negative().mult(f.findStateDerivative(r,
@@ -122,6 +125,8 @@ public abstract class System extends Subsystem {
             }
         }
 
+        u = u1.plus(uff);
+
         for (int y = 0; y < u.numRows(); y++) {
             for (int x = 0; x < u.numCols(); x++) {
                 u.set(y, x, clip(u.get(y, x), uMin.get(y, x), uMax.get(y, x)));
@@ -129,7 +134,7 @@ public abstract class System extends Subsystem {
         }
     }
 
-    protected abstract StateSpace createModel(SimpleMatrix states, SimpleMatrix inputs);
+    protected abstract StateSpace createModel(SimpleMatrix states, SimpleMatrix inputs) throws Exception;
 
     protected abstract void designControllerObserver();
 
@@ -147,7 +152,7 @@ public abstract class System extends Subsystem {
         Q = makeCovMatrix(qElems);
         R = makeCovMatrix(rElems);
 
-        this.kalmanGain = kalmanGain;
+        this.kalmanGain = kalmanGain.copy();
     }
 
     protected void placeObserverPoles(Complex_F64[] poles) throws Exception {

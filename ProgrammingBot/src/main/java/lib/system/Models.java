@@ -2,6 +2,9 @@ package lib.system;
 
 import org.ejml.simple.SimpleMatrix;
 
+/**
+ * @author Vikas Malepati
+ */
 public class Models {
 
     public static class DcBrushedMotor {
@@ -63,7 +66,7 @@ public class Models {
     public static DcBrushedMotor MOTOR_NEO =
             new DcBrushedMotor(12.0, 2.6, 105.0, 1.8, 5676.0);
 
-    public static DcBrushedMotor gearbox(DcBrushedMotor motor, int numMotors) {
+    public static DcBrushedMotor gearbox(DcBrushedMotor motor, double numMotors) {
         return new DcBrushedMotor(motor.nominalVoltage,
                 motor.stallTorque * numMotors,
                 motor.stallCurrent,
@@ -71,7 +74,7 @@ public class Models {
                 motor.freeSpeed / (2.0 * Math.PI) * 60);
     }
 
-    public static StateSpace elevator(DcBrushedMotor motor, int numMotors, double m, double r, double G) throws Exception {
+    public static StateSpace elevator(DcBrushedMotor motor, double numMotors, double m, double r, double G) throws Exception {
         DcBrushedMotor gearbox = gearbox(motor, numMotors);
 
         SimpleMatrix A = new SimpleMatrix(
@@ -94,7 +97,7 @@ public class Models {
         return new StateSpace(A, B, C, D, null);
     }
 
-    public static StateSpace flywheel(DcBrushedMotor motor, int numMotors, double J, double G) throws Exception {
+    public static StateSpace flywheel(DcBrushedMotor motor, double numMotors, double J, double G) throws Exception {
         DcBrushedMotor gearbox = gearbox(motor, numMotors);
 
         SimpleMatrix A = new SimpleMatrix(
@@ -115,7 +118,7 @@ public class Models {
         return new StateSpace(A, B, C, D, null);
     }
 
-    public static StateSpace differentialDrive(DcBrushedMotor motor, int numMotors, double m,
+    public static StateSpace differentialDrive(DcBrushedMotor motor, double numMotors, double m,
                                                double r, double rb, double J, double Gl, double Gr) throws Exception {
         DcBrushedMotor gearbox = gearbox(motor, numMotors);
 
@@ -159,7 +162,7 @@ public class Models {
         return new StateSpace(A, B, C, D, null);
     }
 
-    public static StateSpace singleJointedArm(DcBrushedMotor motor, int numMotors, double J, double G) throws Exception {
+    public static StateSpace singleJointedArm(DcBrushedMotor motor, double numMotors, double J, double G) throws Exception {
         DcBrushedMotor gearbox = gearbox(motor, numMotors);
 
         SimpleMatrix A = new SimpleMatrix(

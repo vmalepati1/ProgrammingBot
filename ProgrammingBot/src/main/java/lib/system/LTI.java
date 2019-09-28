@@ -6,6 +6,9 @@ import org.ejml.data.Complex_F64;
 
 import java.util.List;
 
+/**
+ * @author Vikas Malepati
+ */
 public abstract class LTI {
 
     protected int inputs;

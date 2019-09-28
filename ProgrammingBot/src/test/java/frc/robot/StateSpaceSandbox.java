@@ -5,6 +5,9 @@ import lib.math.Special;
 import org.ejml.simple.SimpleMatrix;
 import org.junit.Test;
 
+/**
+ * @author Vikas Malepati
+ */
 public class StateSpaceSandbox {
 
     @Test

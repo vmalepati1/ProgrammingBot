@@ -2,6 +2,9 @@ package lib.utils;
 
 import java.util.List;
 
+/**
+ * @author Vikas Malepati
+ */
 public class FrequencyResponseData {
 
     // The magnitude (absolute value, not dB or log10) of the system

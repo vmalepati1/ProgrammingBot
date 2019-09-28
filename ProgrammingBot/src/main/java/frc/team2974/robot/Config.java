@@ -58,9 +58,9 @@ public final class Config {
         public static final String PATHFINDER_RIGHT_FOLLOWER_KP = "Pathfinder/Right Follower KP";
         public static final String PATHFINDER_RIGHT_FOLLOWER_KD = "Pathfinder/Right Follower KD";
 
-        public static final String ABSOLUTE_POSE_X = "Absolute Pose/X";
-        public static final String ABSOLUTE_POSE_Y = "Absolute Pose/Y";
-        public static final String ABSOLUTE_POSE_ANGLE_DEGREES = "Absolute Pose/Angle (Degrees)";
+        public static final String ABSOLUTE_POSE_X = "Absolute Pose2d/X";
+        public static final String ABSOLUTE_POSE_Y = "Absolute Pose2d/Y";
+        public static final String ABSOLUTE_POSE_ANGLE_DEGREES = "Absolute Pose2d/Angle (Degrees)";
 
         public static final String VISION_STEER_K = "Vision/Steer K";
         public static final String VISION_DRIVE_K = "Vision/Drive K";

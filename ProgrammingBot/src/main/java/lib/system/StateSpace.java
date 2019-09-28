@@ -17,6 +17,9 @@ import java.util.*;
 
 import static org.ejml.dense.row.CommonOps_ZDRM.*;
 
+/**
+ * @author Vikas Malepati
+ */
 public class StateSpace extends LTI {
 
     public SimpleMatrix A;

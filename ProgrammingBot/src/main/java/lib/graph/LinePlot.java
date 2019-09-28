@@ -15,6 +15,9 @@ import java.io.IOException;
 import java.text.DecimalFormat;
 import java.util.LinkedList;
 
+/**
+ * @author Vikas Malepati
+ */
 public class LinePlot extends JPanel implements ClipboardOwner {
 
     private static final long serialVersionUID = 3205256608145459434L;

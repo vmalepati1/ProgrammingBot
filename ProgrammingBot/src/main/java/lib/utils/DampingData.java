@@ -1,5 +1,8 @@
 package lib.utils;
 
+/**
+ * @author Vikas Malepati
+ */
 public class DampingData {
 
     // Natural frequencies of each system pole

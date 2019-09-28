@@ -5,6 +5,9 @@ import org.ejml.simple.SimpleMatrix;
 
 import static lib.math.Special.epslon;
 
+/**
+ * @author Vikas Malepati
+ */
 public class RiccatiSolver {
 
     private static class RicattiArguments {

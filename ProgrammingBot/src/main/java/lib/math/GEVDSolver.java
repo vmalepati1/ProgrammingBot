@@ -5,6 +5,9 @@ import org.ejml.data.Complex_F64;
 import static lib.math.Special.DOUBLE_EPSILON;
 import static lib.math.Special.epslon;
 
+/**
+ * @author Vikas Malepati
+ */
 public class GEVDSolver {
 
     private int n;

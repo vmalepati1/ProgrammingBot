@@ -2,6 +2,9 @@ package lib.system;
 
 import org.ejml.simple.SimpleMatrix;
 
+/**
+ * @author Vikas Malepati
+ */
 public class RungeKutta {
 
     public static SimpleMatrix rungeKutta(NonlinearFunction f, SimpleMatrix x, SimpleMatrix u, double dt) {

@@ -1,5 +1,8 @@
 package lib.math;
 
+/**
+ * @author Vikas Malepati
+ */
 public class Special {
 
     public static double DOUBLE_EPSILON = 1.11022302462515654042e-16;
@@ -27,7 +30,17 @@ public class Special {
     }
 
     public static double clip(double value, double min, double max) {
-        return Math.max(min, Math.min(max, value));
+        return Math.max(min, Math.min(value, max));
+    }
+
+    public static double sinc(double x) {
+        if (x == 0) {
+            x = 1.0e-20;
+        }
+
+        x *= Math.PI;
+
+        return Math.sin(x) / x;
     }
 
 }
